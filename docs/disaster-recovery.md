@@ -49,6 +49,8 @@ If the cluster is rebuilt from scratch:
    h. Edge LBs (phantom, venom) → Keepalived VIPs
    i. kube-state-metrics, prometheus-operator-crds
    j. ArgoCD Image Updater
+   k. ARC controller + runner AutoscalingRunnerSets
+   l. Webhook service (depends on Doppler, GitHub App credentials)
 5. External app bootstraps auto-sync:
    a. Product namespaces created
    b. DopplerSecrets synced
@@ -59,25 +61,21 @@ If the cluster is rebuilt from scratch:
 
 ### Data Restoration
 
-<!-- TODO: Document specific backup/restore procedures for each data store -->
-
 | Data Store | Backup Method | Restore Procedure | RPO Target |
 |------------|---------------|-------------------|------------|
-| PostgreSQL | CloudNativePG scheduled backups | `cnpg restore` from backup location | <!-- TODO --> |
-| MinIO | <!-- TODO --> | <!-- TODO --> | <!-- TODO --> |
-| Redis | <!-- TODO: RDB/AOF? --> | <!-- TODO --> | <!-- TODO --> |
-| OpenSearch | <!-- TODO --> | <!-- TODO --> | <!-- TODO --> |
-| Observability (Loki/Mimir/Tempo) | None | Accept data loss; rebuild from apps re-emitting | N/A (ephemeral) |
+| PostgreSQL | CloudNativePG scheduled backups (daily full + continuous WAL archiving to MinIO/S3) | `kubectl cnpg restore <cluster> --backup <name>` or PITR with `--target-time` flag. Restore creates a new cluster from backup; update ArgoCD Application to point at recovered cluster. | 1h (continuous WAL) |
+| MinIO | Distributed mode provides in-cluster redundancy. For off-cluster backup: scheduled `mc mirror` to external S3 bucket (daily). | `mc mirror` from backup S3 to restored MinIO. Verify bucket policies post-restore. | 4h (daily mirror) |
+| Redis | RDB snapshots via sentinel (default: every 15m if 1+ write). AOF disabled — acceptable for cache/ephemeral use. | Rebuild from scratch; Redis is used as cache/message broker. Persistent state lives in PostgreSQL. For queues: BullMQ jobs will be re-enqueued by producers on reconnect. | N/A (cache) |
+| OpenSearch | Snapshot to MinIO via repository plugin (daily). | Register snapshot repo, `POST /_snapshot/<repo>/<snapshot>/_restore`. Verify index health post-restore. Needs investigation: snapshot automation not yet configured. | 4h (daily snapshot, once configured) |
+| Observability (Loki/Mimir/Tempo) | None | Accept data loss; rebuild from apps re-emitting. 30-day retention means full history is never critical. | N/A (ephemeral) |
 
 ### RTO/RPO Targets
 
-<!-- TODO: Define targets per service tier -->
-
-| Tier | Services | RTO Target | RPO Target |
-|------|----------|------------|------------|
-| **Critical** | behavior-labs-ai (prod), PostgreSQL | <!-- TODO --> | <!-- TODO --> |
-| **Important** | LiteLLM, edge LBs, DNS | <!-- TODO --> | <!-- TODO --> |
-| **Standard** | Staging environments, observability | <!-- TODO --> | <!-- TODO --> |
+| Tier | Services | RTO Target | RPO Target | Rationale |
+|------|----------|------------|------------|-----------|
+| **Critical** | behavior-labs-ai (prod), PostgreSQL, edge LBs | 4h | 1h | Revenue-impacting, customer-facing. PostgreSQL WAL archiving provides continuous RPO. |
+| **Important** | LiteLLM, DNS, webhook service, ARC controller | 8h | 4h | Platform services that block CI/CD and LLM access. Can tolerate brief outages. |
+| **Standard** | Staging environments, observability, MinIO | 24h | 4h | Internal tooling. Staging can be rebuilt from Git. Observability data is ephemeral. |
 
 ## Backup Strategy (Recommendations)
 
@@ -126,8 +124,6 @@ The `dk-edge-infrastructure` ApplicationSet's **matrix generator** (2 clusters x
 
 ### Path to Multi-Cluster
 
-<!-- TODO: Expand when multi-cluster becomes a priority -->
-
 1. **Active-passive:** Second K3s cluster on standby, ArgoCD syncs manifests but apps scaled to 0. On failover: scale up, update DNS.
 2. **Active-active:** Both clusters serve traffic, Keepalived or DNS-based failover. Requires shared database (CNPG standby replica) and shared object storage.
 3. **Edge expansion:** Add more edge LB nodes using the existing matrix generator pattern — extend from 2 to N nodes.
@@ -146,11 +142,11 @@ The `dk-edge-infrastructure` ApplicationSet's **matrix generator** (2 clusters x
 
 ## Gaps
 
-- **No documented runbook** — recovery steps are tribal knowledge
-- **No RTO/RPO targets** — no agreed-upon recovery time objectives
 - **No automated backup verification** — backups may exist but are never tested
 - **No multi-cluster capability** — single cluster, single point of failure
-- **Observability data not backed up** — acceptable but should be a conscious decision
+- **Observability data not backed up** — acceptable and documented as a conscious decision
+- **OpenSearch snapshot automation** — snapshot repository plugin not yet configured
+- **MinIO off-cluster mirror** — `mc mirror` schedule not yet implemented
 
 ## Related Documentation
 

@@ -34,6 +34,8 @@ Doppler SaaS (source of truth)
 |---------|---------|---------|
 | `behaviorlabs-applications` | `dev`, `stg`, `prd` | behavior-labs-ai (API, app, admin) |
 | `behaviorlabs-infrastructure` | — | PostgreSQL, Redis, MinIO, Alloy |
+| `dk-alchemy-runners` | `prd` | GitHub App credentials for ARC v2 self-hosted runners |
+| `dk-alchemy-webhooks` | `prd` | Webhook service secrets: GitHub App, per-repo HMAC secrets, ArgoCD token, Slack URL, Grafana API key |
 
 ## Build-Time Secrets
 
@@ -81,18 +83,34 @@ Define rotation cadences by secret type:
 - Integrate Doppler audit logs with Loki for compliance visibility
 - Create a `secrets-health` dashboard in Grafana
 
-### 3. Standardize Doppler Project Structure
+### 3. Standardize Doppler Project Naming Convention
 
-For each new product repo:
+All Doppler projects follow a consistent naming scheme. Note: [`dk-template`](https://github.com/data-kinetic/dk-template) generates `scripts/doppler/setup-doppler-dev.sh` pre-configured with the correct project naming — see [Template Repository](template-repo.md).
+
+| Pattern | Used For | Example |
+|---------|----------|---------|
+| `<product>-applications` | Product repo application secrets | `behaviorlabs-applications`, `carbon5-applications` |
+| `dk-alchemy-<service>` | Platform services in dk-alchemy | `dk-alchemy-runners`, `dk-alchemy-webhooks` |
+| `<product>-infrastructure` | Product-specific infra (if needed) | `behaviorlabs-infrastructure` |
+
+Each project has standard configs:
 ```
 <product>-applications
   ├── dev   — local development
   ├── stg   — staging environment
   └── prd   — production environment
 
+dk-alchemy-<service>
+  └── prd   — production only (platform services)
+
 <product>-infrastructure  (if product has dedicated infra)
-  └── ...
+  └── prd
 ```
+
+**Naming rules:**
+- Product names use lowercase with hyphens (e.g., `carbon-5`, `dk-os`)
+- Platform service projects always prefixed with `dk-alchemy-`
+- Never use underscores in project names
 
 ### 4. Least-Privilege Token Scoping
 
@@ -105,4 +123,5 @@ For each new product repo:
 - [Infrastructure](infrastructure.md) — Doppler Operator deployment
 - [GitOps & CD](gitops-and-cd.md) — how DopplerSecret CRDs fit in the app-of-apps pattern
 - [Security & Compliance](security-and-compliance.md) — broader security posture
+- [Template Repository](template-repo.md) — generates Doppler setup scripts following naming conventions
 - [CI/CD Pipelines](ci-cd-pipelines.md) — build-time secret injection

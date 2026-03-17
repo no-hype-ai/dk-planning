@@ -145,6 +145,19 @@ Track governance effectiveness:
 
 Consider adding a `governance-health` Grafana dashboard sourced from GitHub API data.
 
+## Doc Gap Scanner Integration
+
+The **doc-gap scanner** (`scripts/doc-gap-scanner/`) runs as a scheduled GitHub Actions workflow in dk-planning. It scans all markdown documentation for gaps (TODO markers, empty sections, TBD cells, unchecked gap items) and creates GitHub issues with the `doc-gap` label.
+
+**How it integrates with governance:**
+- Scanner-created issues enter `status/triage` and flow through the standard governance pipeline
+- Issues are labeled `doc-gap`, `priority/P2`-`priority/P4`, and `source/doc-scanner`
+- The `doc-gap` label enables filtering in weekly reports
+- Deduplication is hash-based: each gap gets a deterministic ID from `sha256(file_path + gap_type + normalized_content)`
+- If a gap issue is closed but the gap persists in the doc, the issue is reopened with a comment
+
+**When governance extracts to org-level**, the doc-gap scanner can run cross-repo, scanning all product repos' documentation for gaps using the same label taxonomy.
+
 ## Gaps
 
 - **behavior-labs-ai only** — no other repos have governance

@@ -86,7 +86,7 @@ All run as single-replica StatefulSets on `local-path-bulk`:
 | Folder | Dashboards |
 |--------|------------|
 | **cluster/** | cluster-overview |
-| **infrastructure/** | alloy, argocd, cert-manager, doppler, minio, postgres-cnpg, probe-service, redis, traefik |
+| **infrastructure/** | alloy, arc-runners, argocd, cert-manager, doppler, minio, postgres-cnpg, probe-service, redis, traefik, webhook-service |
 | **observability/** | loki, mimir, tempo (self-monitoring) |
 | **applications/** | api-performance, behavior-labs-admin, behavior-labs-api, behavior-labs-apps, dk-data-api, dk-data-pipeline, dk-data-platform-status, dk-data-postgrest-slo, feature-usage, litellm, lithium-overview, org-analytics, product-analytics |
 | **slo/** | *(empty — placeholder)* |
@@ -247,17 +247,82 @@ dk-alchemy's notification policy routes by `team` label. New teams register a Sl
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
+### SLO Dashboard Content
+
+The `slo/` folder should contain dashboards that query the SLO recording rules defined in [Incident Management](incident-management.md#slo-recording-rule-examples):
+
+- **slo-overview.json** — all services' error budget remaining, compliance status, burn rate
+- **slo-detail.json** — per-service deep dive: error ratio over time, budget consumption, SLO compliance history
+
+Each SLO dashboard should use `slo:http_requests:error_budget_remaining` and `slo:http_requests:error_ratio_5m` recording rules as the primary data sources.
+
+## Dashboard Contribution Quick-Start
+
+Product repos contribute their own dashboards and alerts, deployed automatically via Kustomize components. Note: [`dk-template`](https://github.com/data-kinetic/dk-template) generates the `monitoring/` directory with placeholder dashboard and alert files following the conventions below — see [Template Repository](template-repo.md).
+
+Here's how to add a dashboard:
+
+### 1. Create Dashboard JSON
+
+```bash
+# Export from Grafana UI or create from scratch
+# Save to: monitoring/dashboards/<service>-overview.json
+```
+
+**Required fields:**
+```json
+{
+  "uid": "<product>-<service>-overview",
+  "title": "<Product> <Service> Overview",
+  "tags": ["<product>", "<service>", "auto-deployed"],
+  "editable": false
+}
+```
+
+### 2. Create Alert Rules
+
+```yaml
+# monitoring/alerts/<service>.yaml
+apiVersion: 1
+groups:
+  - name: <service>-alerts
+    folder: applications
+    rules:
+      - title: <service>-high-error-rate
+        condition: C
+        labels:
+          team: <product-team>
+          service: <service-name>
+          product: <product-name>
+          severity: warning
+```
+
+### 3. Include Kustomize Components
+
+Add to your service's `overlays/prod/kustomization.yaml`:
+```yaml
+components:
+  - ../../../../components/grafana-dashboards
+  - ../../../../components/grafana-alerts
+```
+
+### 4. Validate in CI
+
+Add dashboard JSON validation to your CI pipeline. See [Standards Compliance](standards-compliance.md) Tier 2 for automated checks.
+
 ## Gaps
 
-- **SLO dashboards empty** — `slo/` folder exists but no dashboards
+- **SLO dashboards empty** — `slo/` folder exists but recording rules and dashboards are defined; implementation pending
 - **No trace correlation in app dashboards** — Tempo data exists but dashboards don't deep-link to traces
 - **Single-replica backends** — Loki/Mimir/Tempo are single-replica; acceptable at current scale
 - **No sampling strategy** — all traces stored (Tempo); may need head/tail sampling at scale
-- **Product repos don't contribute dashboards** — all 26 dashboards live in dk-alchemy
+- **Product repos don't contribute dashboards** — all dashboards live in dk-alchemy; quick-start guide above should enable adoption
 - **No ArgoCD Notification Controller** — deployment status, drift alerts, and sync failures are not surfaced to Slack
 
 ## Related Documentation
 
 - [Application Instrumentation](application-instrumentation.md) — OTel SDK, health checks
 - [Incident Management](incident-management.md) — SLOs, on-call, escalation
+- [Template Repository](template-repo.md) — generates monitoring directory with placeholder dashboards/alerts
+- [Standards Compliance](standards-compliance.md) — observability compliance checks (Tier 2)
 - [Infrastructure](infrastructure.md) — backend storage, networking

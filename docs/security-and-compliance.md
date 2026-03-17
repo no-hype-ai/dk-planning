@@ -31,7 +31,26 @@ This prevents one product from modifying another's resources.
 | Provenance attestation | Enabled in behavior-labs-ai CI |
 | Source map deletion post-upload | Done (Sentry) |
 | No secrets in image layers | Doppler `--mount=type=secret` |
-| Base image updates | <!-- TODO: Automated? --> |
+| Base image updates | Renovate auto-PRs (see [CI/CD Pipelines](ci-cd-pipelines.md#4-dependency-update-automation)) |
+
+### Self-Hosted Runner Isolation
+
+ARC v2 runners enforce security through multiple layers:
+- **Ephemeral pods** — destroyed after each job, no persistent state or credential leakage
+- **NetworkPolicy** — default-deny ingress, explicit egress allowlist (GitHub, GHCR, Doppler, Alloy, npm)
+- **Minimal RBAC** — per-runner-class ServiceAccount, no cluster-level permissions
+- **Runner groups** — GitHub org-level groups restrict which repos can use gpu runners
+- **DinD sidecar** — Docker-in-Docker runs as a privileged sidecar; ephemeral pod lifecycle mitigates privilege risk
+
+See [Self-Hosted Runners & Webhook Service](self-hosted-runners-and-webhooks.md) for full details.
+
+### Webhook Signature Validation
+
+The webhook service validates all incoming requests via HMAC-SHA256:
+- Each product repo has its own webhook secret stored in Doppler (`dk-alchemy-webhooks` project)
+- Webhook URL includes repo name for secret lookup: `POST /webhooks/{repo}`
+- Requests without valid `X-Webhook-Signature` header are rejected
+- Traefik rate-limiting (30 req/min burst 50) + app-level per-repo limits protect against abuse
 
 ### Secrets
 
@@ -47,8 +66,6 @@ This prevents one product from modifying another's resources.
 - **sentinel-probe** monitors TLS certificate expiry from outside the network
 
 ## Gaps
-
-<!-- TODO: Each gap needs investigation and a recommendation -->
 
 ### Policy Enforcement
 
@@ -77,19 +94,44 @@ This prevents one product from modifying another's resources.
 
 ## Recommendations
 
-### 1. Deploy Kyverno or OPA/Gatekeeper
+### 1. Deploy Kyverno (Admission Controller)
 
-Add an admission controller to dk-alchemy's infrastructure:
+Add **Kyverno** to dk-alchemy's infrastructure as the admission controller. Kyverno was chosen over OPA/Gatekeeper for its Kubernetes-native policy syntax (no Rego) and simpler operations model.
+
+#### Implementation Plan
+
+**Phase 1 — Audit mode** (no enforcement, report-only):
+1. Deploy Kyverno in `audit` mode via dk-alchemy `k8s/infrastructure/kyverno/`
+2. Add policies in `audit` mode — they report violations but do not block
+3. Review PolicyReport CRDs to assess current non-compliance
+4. Fix violations across dk-alchemy and product repos
+
+**Phase 2 — Enforce on staging**:
+1. Switch staging policies to `enforce` mode
+2. Validate that CI/CD pipelines pass admission checks
+3. Monitor for false positives over 2 weeks
+
+**Phase 3 — Enforce on production**:
+1. Switch production policies to `enforce` mode
+2. Add Kyverno to DR bootstrap order (step 4c, after cert-manager)
+3. Monitor PolicyReport metrics in Grafana
+
+#### Policies
 
 ```yaml
-# Example Kyverno policies:
-- require-resource-limits        # All pods must have CPU/memory limits
-- restrict-image-registries      # Only ghcr.io/data-kinetic/* allowed
-- require-labels                 # team, service, product labels required
-- disallow-latest-tag           # No :latest in prod namespaces
-- require-run-as-non-root       # No root containers
-- require-read-only-rootfs      # Read-only root filesystem
+# k8s/infrastructure/kyverno/policies/
+require-resource-limits.yaml       # All pods must have CPU/memory requests and limits
+restrict-image-registries.yaml     # Only ghcr.io/data-kinetic/* images allowed
+require-labels.yaml                # team, service, product labels required on Deployments
+disallow-latest-tag.yaml           # No :latest in prod namespaces
+require-run-as-non-root.yaml       # No root containers (except DinD sidecar in ARC runners)
+require-read-only-rootfs.yaml      # Read-only root filesystem
+require-probes.yaml                # Liveness and readiness probes on all Deployments
 ```
+
+**Exclusions:** ARC runner pods require privileged DinD sidecar — create a Kyverno exception for pods in the `arc-system` namespace with `dind` container name.
+
+These policies are also enforced at CI time via the [Standards Compliance](standards-compliance.md) checks (Tier 1: Manifest Validation), providing shift-left enforcement before admission control.
 
 ### 2. Image Signing
 
@@ -122,7 +164,7 @@ Create a Grafana dashboard for security-relevant events.
 
 ### 6. Compliance Framework
 
-<!-- TODO: Determine applicable compliance frameworks (SOC 2, HIPAA, etc.) -->
+Compliance planning and evidence collection live in the [`dk-compliance-v2`](https://github.com/data-kinetic/dk-compliance-v2) repo. The `compliance-and-attestation/` directory in dk-planning previously served as a placeholder and now cross-references dk-compliance-v2 as the canonical location.
 
 If pursuing SOC 2 or similar:
 - Document access control policies
@@ -136,4 +178,6 @@ If pursuing SOC 2 or similar:
 - [Secrets Management](secrets-management.md) — Doppler operator, rotation
 - [Infrastructure](infrastructure.md) — namespace isolation, network setup
 - [CI/CD Pipelines](ci-cd-pipelines.md) — supply chain, SBOM, image builds
+- [Standards Compliance](standards-compliance.md) — CI/CD standards enforcement (shift-left for Kyverno policies)
+- [PR Review Service](pr-review-service.md) — automated PR security review
 - [Disaster Recovery](disaster-recovery.md) — backup and access controls

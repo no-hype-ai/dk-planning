@@ -103,6 +103,10 @@ Full list of infrastructure components managed via `dk-infrastructure` Applicati
 | storage-classes | — | Storage class definitions |
 | tempo | infra | Distributed tracing (200Gi) |
 | traefik | kube-system | In-cluster ingress (HelmChartConfig) |
+| arc-controller | arc-system | Actions Runner Controller v2 (Helm) |
+| arc-runners | arc-system | AutoscalingRunnerSets: standard, large, gpu |
+| webhook-service | infra | FastAPI webhook handler for cross-repo events |
+| kyverno | kyverno | Policy engine for admission control (planned) |
 
 ## Gaps
 
@@ -115,5 +119,6 @@ Full list of infrastructure components managed via `dk-infrastructure` Applicati
 - [Platform Overview](platform-overview.md) — physical hosts, network topology
 - [Observability](observability.md) — LGTM stack details
 - [Secrets Management](secrets-management.md) — Doppler operator
-- [Networking details](infrastructure.md#networking--edge)
+- [Self-Hosted Runners & Webhook Service](self-hosted-runners-and-webhooks.md) — ARC runners and webhook service details
+- [PR Review Service](pr-review-service.md) — PR critic service running on lithium-5 (krang GPUs)
 - [Disaster Recovery](disaster-recovery.md) — backup and restore for data stores

@@ -147,13 +147,17 @@ dk-alchemy provides Kustomize components (`grafana-dashboards`, `grafana-alerts`
 
 ## Health Check Standard
 
-All product repos should implement:
+All product repos should implement the following **minimum** health endpoints:
 
-| Endpoint | Purpose | Implementation |
-|----------|---------|----------------|
-| `GET /health` | k8s liveness probe | Bare `200 OK`, no dependency checks |
-| `GET /ready` | k8s readiness probe | Check critical dependencies (DB, cache) |
-| `GET /api/health` | Detailed health | Per-dependency status, response times |
+| Endpoint | Purpose | Implementation | Required |
+|----------|---------|----------------|----------|
+| `GET /health` | k8s liveness probe | Bare `200 OK`, no dependency checks. Must respond within 1s. | Yes |
+| `GET /ready` | k8s readiness probe | Check critical dependencies (DB, cache). Return 503 if any critical dependency is down. | Yes |
+| `GET /api/health` | Detailed health | Per-dependency status, response times. Used by dashboards and admin UIs. | Recommended |
+
+The minimum standard (`/health` and `/ready`) is **required** for all services and enforced by [Standards Compliance](standards-compliance.md) Tier 4 checks. Note: [`dk-template`](https://github.com/data-kinetic/dk-template) generates deployment manifests with liveness and readiness probes pre-configured on `/health` and `/ready` — see [Template Repository](template-repo.md). The behavior-labs-ai reference implementation above shows rich extensions beyond the minimum (worker queue health, DLQ listing, aggregated dashboard health) — these are useful but not required for all services.
+
+**Key difference:** `/health` must never check dependencies (it's a liveness probe — if it fails, K8s restarts the pod). `/ready` checks critical dependencies (it's a readiness probe — if it fails, the pod is removed from service endpoints until it recovers).
 
 ## Gaps
 
@@ -168,4 +172,5 @@ All product repos should implement:
 - [Observability](observability.md) — platform LGTM stack
 - [Product Analytics](product-analytics.md) — PostHog (separate from infra observability)
 - [Incident Management](incident-management.md) — SLOs, escalation
+- [Template Repository](template-repo.md) — generates deployment manifests with probes pre-configured
 - [Onboarding](onboarding.md) — instrumentation checklist for new repos

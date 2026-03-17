@@ -65,32 +65,45 @@ Data Kinetic runs a self-hosted Kubernetes platform on bare-metal Proxmox hosts,
 |---------|------------|------------|-------|-------|
 | **BehaviorLabs AI** | [behavior-labs-ai](https://github.com/data-kinetic/behavior-labs-ai) | K8s / ArgoCD | NestJS, Next.js, PostgreSQL (pgvector), Redis, MinIO | Production reference implementation |
 | **BehaviorLabs Web** | [behavior-labs-web](https://github.com/data-kinetic/behavior-labs-web) | K8s / ArgoCD | — | Production |
-| **Carbon-5** | [carbon-5](https://github.com/data-kinetic/carbon-5) | K8s / ArgoCD (target) | NestJS, Next.js, Drizzle, Prefect 3, PostgreSQL, Redis, SeaweedFS | Data pipeline + AI workflow platform. Absorbing agent-mesh + dk-data-fe |
+| **Carbon-5** | [carbon-5](https://github.com/data-kinetic/carbon-5) | K8s / ArgoCD (target) | NestJS, Next.js, Drizzle, Prefect 3, PostgreSQL, Redis, SeaweedFS | Data pipeline + AI workflow platform. Absorbing dk-data-fe into Prefect dataflows. Agent workflow UI dispatches execution to lithium-5. |
 | **DK-OS** | [DK-OS](https://github.com/data-kinetic-projects/DK-OS) | K8s / ArgoCD (target) | NestJS, Next.js, Prisma, PostgreSQL, Redis, SeaweedFS | Business operating system. Absorbing dk-mercury + dk-phantom |
-| **Lithium-5** | [lithium-5](https://github.com/data-kinetic/lithium-5) | K8s / ArgoCD (target) | Python (FastMCP), PostgreSQL, Redis, Docker-in-Docker | Agentic support fabric — dynamic orchestration for DK-OS + other DK functions |
+| **Lithium-5** | [lithium-5](https://github.com/data-kinetic/lithium-5) | K8s / ArgoCD (target) | Python (FastMCP) + NestJS (agent-mesh companion), PostgreSQL, Redis | Agent execution fabric. Absorbing agent-mesh. Provides API to carbon-5, behavior-labs-ai, DK-OS for all agent operations. Also hosts the [PR Review Service](pr-review-service.md) on krang GPUs. |
 | **DK Compliance v2** | [dk-compliance-v2](https://github.com/data-kinetic/dk-compliance-v2) | K8s / ArgoCD (target) | — | Compliance management, pending onboarding |
 
 ### Being Deprecated (services migrating out)
 
 | Product | Repository | Destination | Migration Doc |
 |---------|------------|-------------|---------------|
-| **Agent Mesh** | [agent-mesh](https://github.com/data-kinetic/agent-mesh) | carbon-5 | [Plan](migrations/agent-mesh-to-carbon-5.md) |
+| **Agent Mesh** | [agent-mesh](https://github.com/data-kinetic/agent-mesh) | lithium-5 | [Plan](migrations/agent-mesh-to-lithium-5.md) |
 | **DK Data** | [dk-data-fe](https://github.com/data-kinetic/dk-data-fe) | carbon-5 | [Plan](migrations/dk-data-to-carbon-5.md) |
 | **DK Mercury** | [dk-mercury](https://github.com/data-kinetic/dk-mercury) | DK-OS | [Plan](migrations/dk-mercury-to-dk-os.md) |
 | **DK Phantom** | [dk-phantom](https://github.com/data-kinetic/dk-phantom) | DK-OS | [Plan](migrations/dk-phantom-to-dk-os.md) |
 
-### Lithium-5 — Agentic Support Fabric
+### Lithium-5 — Agent Execution Fabric
 
-Lithium-5 is not a product — it is an **orchestration fabric** that coordinates AI coding agents across DK-OS and other DK projects. It provides:
+Lithium-5 is not a user-facing product — it is the **centralized agent execution layer** that all products consume via API. After absorbing agent-mesh, it provides:
 
-- **Agent mail** — structured messaging between AI agents (Claude Code, Codex, Cursor)
-- **Ephemeral orchestration** — spawns Docker containers running Claude Code to execute tasks autonomously
-- **OpenClaw** — human-in-the-loop MCP interface for oversight and approval
-- **Governance** — delivers constitution and runbook to agents, enforces boundaries
-- **Spec-kit integration** — tracks specification lifecycle across projects
-- **Reporting** — parses structured work reports, generates daily digests
+**Agent execution (from agent-mesh):**
+- Agent CRUD with semantic versioning and pgvector catalog search
+- Multi-provider LLM execution (Anthropic, OpenAI, Google, Ollama) with failover
+- Real-time SSE streaming, tool sandboxing (`isolated-vm`)
+- MCP gateway (client + server), agent-to-agent delegation
+- Policy enforcement, workflow DAG execution, circuit breakers
+- Published SDK: `@datakinetic/agent-mesh-sdk`
 
-Currently on Docker Compose (Megatron) — target state is K8s/ArgoCD following the standard app-of-apps pattern. The Docker-in-Docker orchestrator (ephemeral worker containers) requires special K8s configuration (privileged pods or sidecar Docker daemon).
+**Agent coordination (existing lithium-5):**
+- Agent mail — structured messaging between AI agents
+- Ephemeral orchestration — spawns containers to execute tasks autonomously
+- OpenClaw — human-in-the-loop MCP interface for oversight
+- Governance — constitution, runbooks, boundary enforcement
+- Reporting — structured work reports, daily digests
+
+**How products consume lithium-5:**
+- **carbon-5** — dispatches visual workflow execution, agent CRUD for partners/customers
+- **behavior-labs-ai** — dispatches evaluation pipelines, domain agent tasks
+- **DK-OS** — dispatches org intelligence agents, synthetic testing agents
+
+Target state is K8s/ArgoCD following the standard app-of-apps pattern. Runs as a Python service (FastMCP) + NestJS companion service (agent-mesh) in the same namespace.
 
 ## GitHub Organization Structure
 
@@ -116,6 +129,7 @@ DK-OS should move to the `data-kinetic` org to simplify ArgoCD repo credentials,
 | `mercury.datakinetic.com` | dk-mercury → DK-OS | Remap post-migration |
 | `phantom.behaviorlabs.ai` | dk-phantom → DK-OS | Remap post-migration |
 | `*.dev.datakinetic.com` | DK-OS (staging) | Current staging |
+| `webhooks.datakinetic.com` | dk-alchemy | Webhook service for cross-repo event handling |
 | `enercore.ai` | Enercore | Production |
 
 ## Related Documentation
@@ -123,5 +137,7 @@ DK-OS should move to the `data-kinetic` org to simplify ArgoCD repo credentials,
 - [GitOps & CD](gitops-and-cd.md) — how deployments flow through ArgoCD
 - [Infrastructure](infrastructure.md) — detailed infra component inventory
 - [Observability](observability.md) — monitoring stack architecture
+- [Standards Compliance](standards-compliance.md) — CI/CD standards enforcement
+- [PR Review Service](pr-review-service.md) — automated PR review on lithium-5
 - [Onboarding](onboarding.md) — how to add a new product repo to the platform
 - [Migrations](migrations/README.md) — repo consolidation strategy

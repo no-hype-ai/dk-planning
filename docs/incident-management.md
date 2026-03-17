@@ -105,14 +105,59 @@ Alert fires → Auto-create issue (if no duplicate)
 
 ### Postmortem Template
 
-<!-- TODO: Create postmortem template -->
+For P0/P1 incidents, create a GitHub issue with label `postmortem` within 48 hours of resolution:
 
-For P0/P1 incidents:
-- Timeline of events
-- Root cause analysis
-- Impact assessment (users affected, duration, data loss)
-- Action items with owners and deadlines
-- SLO budget impact
+```markdown
+## Incident Summary
+- **Incident:** [Title]
+- **Severity:** P0 / P1
+- **Duration:** [Start time] – [End time] ([total duration])
+- **Detected by:** [Alert name / user report / sentinel-probe]
+- **Resolved by:** [Name]
+
+## Timeline
+| Time (UTC) | Event |
+|------------|-------|
+| HH:MM | Alert fired / incident detected |
+| HH:MM | On-call acknowledged |
+| HH:MM | Root cause identified |
+| HH:MM | Fix deployed |
+| HH:MM | Monitoring confirms recovery |
+
+## Impact
+- **Users affected:** [count or percentage]
+- **Services affected:** [list]
+- **Data loss:** [none / describe]
+- **SLO budget consumed:** [X% of 30-day budget]
+
+## Root Cause
+[Describe the underlying cause — not just the symptom]
+
+## Detection
+- How was this detected? Could it have been detected earlier?
+- Were existing alerts effective?
+
+## Resolution
+- What fixed the issue?
+- Were there any difficulties in the response?
+
+## Action Items
+| Action | Owner | Deadline | Issue |
+|--------|-------|----------|-------|
+| [Preventive action] | [Name] | [Date] | #NNN |
+| [Detection improvement] | [Name] | [Date] | #NNN |
+| [Process improvement] | [Name] | [Date] | #NNN |
+
+## Lessons Learned
+- What went well?
+- What could be improved?
+```
+
+**Process:**
+1. Incident responder creates the postmortem issue within 48 hours
+2. Team reviews and fills in details collaboratively
+3. Action items are tracked as separate linked issues with deadlines
+4. Postmortem is reviewed in the next team sync
 
 ## ArgoCD Deployment Notifications
 
@@ -131,13 +176,57 @@ Deploy **ArgoCD Notification Controller** in dk-alchemy, integrated with Slack:
 
 Route by ArgoCD Application labels (`team`, `product`) using the same routing taxonomy as Grafana alerts.
 
+### SLO Recording Rule Examples
+
+Precompute SLI metrics via Mimir recording rules so dashboards and burn-rate alerts query efficiently:
+
+```yaml
+# grafana/recording-rules/slo.yaml
+groups:
+  - name: slo-recording-rules
+    interval: 1m
+    rules:
+      # Error ratio (non-5xx / total) — 5m window
+      - record: slo:http_requests:error_ratio_5m
+        expr: |
+          1 - (
+            sum(rate(http_requests_total{status=~"5.."}[5m])) by (service)
+            /
+            sum(rate(http_requests_total[5m])) by (service)
+          )
+
+      # Error ratio — 30m window (for slow burn detection)
+      - record: slo:http_requests:error_ratio_30m
+        expr: |
+          1 - (
+            sum(rate(http_requests_total{status=~"5.."}[30m])) by (service)
+            /
+            sum(rate(http_requests_total[30m])) by (service)
+          )
+
+      # Error budget remaining (30-day window, 99.5% target)
+      - record: slo:http_requests:error_budget_remaining
+        expr: |
+          1 - (
+            (1 - slo:http_requests:error_ratio_30m)
+            /
+            (1 - 0.995)
+          )
+
+      # P95 latency
+      - record: slo:http_request_duration:p95_5m
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service))
+```
+
+Populate the `slo/` dashboard folder with dashboards that query these recording rules for error budget burn rate, compliance history, and SLO status per service.
+
 ## Gaps
 
 - **No on-call rotation** — Slack-only, no paging
-- **No SLOs** — `slo/` dashboard folder is empty
+- **No SLOs** — `slo/` dashboard folder is empty; recording rule examples defined above
 - **No incident lifecycle** — no formal declare/respond/resolve/postmortem flow
 - **No automated issue creation** from alerts
-- **No postmortem process**
 - **No deployment notifications** — ArgoCD sync status not surfaced to teams
 
 ## Related Documentation
@@ -145,3 +234,4 @@ Route by ArgoCD Application labels (`team`, `product`) using the same routing ta
 - [Observability](observability.md) — alert rules and contact points
 - [Issue Governance](issue-governance.md) — automated issue lifecycle management
 - [Application Instrumentation](application-instrumentation.md) — what generates the telemetry
+- [Standards Compliance](standards-compliance.md) — observability tier requirements

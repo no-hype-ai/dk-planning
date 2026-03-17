@@ -53,7 +53,7 @@ monitoring/
   build-deploy.yaml
 ```
 
-<!-- TODO: Create a GitHub template repo that generates this structure -->
+> **Template available:** Use [`data-kinetic/dk-template`](https://github.com/data-kinetic/dk-template) to generate this structure automatically. Click "Use this template" on GitHub, then run `./scripts/init.sh --product <name> --team <team> --service <service>`. See [Template Repository](template-repo.md) for details.
 
 ## 2. dk-alchemy Integration
 
@@ -74,8 +74,24 @@ Submit a PR to dk-alchemy adding:
 - [ ] Add `build-deploy.yaml` workflow (use shared workflow when available)
   - Docker build with Doppler secrets injection
   - GHCR push with standard tagging (`staging-<sha7>`, `<version>`, `main-<sha7>`)
-  - Kustomize overlay update for staging
   - SBOM and provenance attestation
+- [ ] **Select runner labels** — choose the appropriate self-hosted runner class for each job:
+  - `runs-on: [self-hosted, linux, standard]` — linting, testing, kustomize validation
+  - `runs-on: [self-hosted, linux, large]` — Docker builds, Turborepo, Playwright
+  - `runs-on: [self-hosted, linux, gpu]` — ML workloads (requires runner group approval)
+  - See [Self-Hosted Runners & Webhook Service](self-hosted-runners-and-webhooks.md) for details
+- [ ] **Add webhook notification step** — replace direct kustomize commits with a webhook call to `webhooks.datakinetic.com`:
+  ```yaml
+  - name: Notify dk-alchemy
+    run: |
+      PAYLOAD='{"event":"image-built","image":"...","tag":"..."}'
+      SIGNATURE=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "${{ secrets.DK_WEBHOOK_SECRET }}" | cut -d' ' -f2)
+      curl -s -X POST "https://webhooks.datakinetic.com/webhooks/${{ github.event.repository.name }}" \
+        -H "Content-Type: application/json" \
+        -H "X-Webhook-Signature: sha256=$SIGNATURE" \
+        -d "$PAYLOAD"
+  ```
+  - Request a per-repo webhook secret (`DK_WEBHOOK_SECRET`) — stored in Doppler `dk-alchemy-webhooks` project
 - [ ] Configure `dorny/paths-filter` for smart change detection per service
 - [ ] Add kubeconform and kustomize-validate CI checks for `k8s/` manifests
 - [ ] Set up branch protection on `main` and `staging`
@@ -130,7 +146,60 @@ Submit a PR to dk-alchemy adding:
 - [ ] Define SLO targets for the product
 - [ ] Add SLO dashboard to `monitoring/dashboards/<service>-slo.json`
 
-## 9. Production Hardening
+## 9. Kustomize Component Matrix
+
+The following Kustomize components (from `dk-alchemy k8s/components/`) should be included based on your service's needs:
+
+| Component | When to Include | Example |
+|-----------|-----------------|---------|
+| `hpa-production` | Production services that need autoscaling | API servers, web apps |
+| `hpa-standard` | Staging/smaller services with autoscaling | Background workers |
+| `pdb-standard` | Any service with >1 replica | All production services |
+| `doppler-secret` | All services | Required for secrets |
+| `otlp-collector` | All services | Required for observability |
+| `service-loadbalancer` | Services exposed via edge LB | Public APIs, web apps |
+| `grafana-dashboards` | Services with custom dashboards | Services contributing `monitoring/dashboards/` |
+| `grafana-alerts` | Services with custom alerts | Services contributing `monitoring/alerts/` |
+
+Include components in your overlay's `kustomization.yaml`:
+```yaml
+# k8s/apps/<service>/overlays/prod/kustomization.yaml
+components:
+  - ../../../../components/doppler-secret
+  - ../../../../components/otlp-collector
+  - ../../../../components/hpa-production
+  - ../../../../components/pdb-standard
+  - ../../../../components/grafana-dashboards
+  - ../../../../components/grafana-alerts
+```
+
+## 10. Standards Compliance
+
+- [ ] Add `.dk-standards.yaml` to repo root:
+  ```yaml
+  product: <product-name>
+  team: <team-name>
+  tiers: [1, 2, 3]
+  grace_period_until: "<date>"  # Optional: warn-only until this date
+  ```
+- [ ] Add standards check workflow:
+  ```yaml
+  jobs:
+    standards:
+      uses: data-kinetic/.github/.github/workflows/standards-check.yaml@main
+      with:
+        tiers: '1,2,3'
+  ```
+- [ ] Verify all Tier 1 checks pass (manifest validation, labels, probes, resource limits)
+- [ ] Verify Tier 2 checks pass (dashboard/alert existence and validity)
+
+See [Standards Compliance](standards-compliance.md) for the full tier system.
+
+## 11. PR Review Service
+
+The automated [PR Review Service](pr-review-service.md) will review PRs targeting staging branches. No repo-level configuration needed — the webhook service forwards PR events to the critic automatically for repos listed in `CRITIC_ENABLED_REPOS`.
+
+## 12. Production Hardening
 
 - [ ] Rolling update strategy (maxSurge 1, maxUnavailable 0)
 - [ ] Pod anti-affinity (spread across nodes)
@@ -139,7 +208,7 @@ Submit a PR to dk-alchemy adding:
 - [ ] Resource requests and limits set
 - [ ] Database migrations as ArgoCD PreSync hooks (if applicable)
 
-## 10. Documentation
+## 13. Documentation
 
 - [ ] Update [Platform Overview](platform-overview.md) — add to product portfolio table
 - [ ] Update dk-alchemy README if needed
@@ -149,8 +218,9 @@ Submit a PR to dk-alchemy adding:
 
 After completing all steps, verify:
 
+- [ ] Template init completed successfully (`init.sh` ran without errors, placeholders replaced)
 - [ ] ArgoCD shows the product's Applications as synced and healthy
-- [ ] Pushing to `staging` triggers build → image push → kustomize update → ArgoCD sync → deployment
+- [ ] Pushing to `staging` triggers build → image push → webhook notification → webhook service commits kustomize update → ArgoCD sync → deployment
 - [ ] Health endpoints respond correctly
 - [ ] Telemetry appears in Grafana (logs in Loki, metrics in Mimir, traces in Tempo)
 - [ ] Dashboards and alerts are visible in Grafana
@@ -160,8 +230,12 @@ After completing all steps, verify:
 
 ## Related Documentation
 
+- [Template Repository](template-repo.md) — GitHub template repo for scaffolding new product repos
 - [GitOps & CD](gitops-and-cd.md) — ArgoCD pattern details
 - [CI/CD Pipelines](ci-cd-pipelines.md) — build workflow details
+- [Self-Hosted Runners & Webhook Service](self-hosted-runners-and-webhooks.md) — runner classes and webhook integration
+- [Standards Compliance](standards-compliance.md) — CI/CD standards enforcement
+- [PR Review Service](pr-review-service.md) — automated PR review
 - [Observability](observability.md) — LGTM stack connection
 - [Application Instrumentation](application-instrumentation.md) — OTel SDK setup
 - [Product Analytics](product-analytics.md) — PostHog integration
