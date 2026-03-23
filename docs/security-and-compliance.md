@@ -6,7 +6,7 @@ This document covers the platform's security posture: RBAC, network policies, su
 
 ## Current State
 
-### ArgoCD RBAC (AppProjects)
+### [ArgoCD](https://argo-cd.readthedocs.io/) RBAC (AppProjects)
 
 Each product gets an ArgoCD **AppProject** that constrains:
 - **Allowed source repos** — only the product's own GitHub repo
@@ -26,11 +26,11 @@ This prevents one product from modifying another's resources.
 
 | Practice | Status |
 |----------|--------|
-| Images from GHCR only | Convention (not enforced) |
+| Images from [GHCR](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry) only | Convention (not enforced) |
 | SBOM generation | Enabled in behavior-labs-ai CI |
 | Provenance attestation | Enabled in behavior-labs-ai CI |
-| Source map deletion post-upload | Done (Sentry) |
-| No secrets in image layers | Doppler `--mount=type=secret` |
+| Source map deletion post-upload | Done ([Sentry](https://docs.sentry.io/)) |
+| No secrets in image layers | [Doppler](https://docs.doppler.com/) `--mount=type=secret` |
 | Base image updates | Renovate auto-PRs (see [CI/CD Pipelines](ci-cd-pipelines.md#4-dependency-update-automation)) |
 
 ### Self-Hosted Runner Isolation
@@ -40,7 +40,7 @@ ARC v2 runners enforce security through multiple layers:
 - **NetworkPolicy** — default-deny ingress, explicit egress allowlist (GitHub, GHCR, Doppler, Alloy, npm)
 - **Minimal RBAC** — per-runner-class ServiceAccount, no cluster-level permissions
 - **Runner groups** — GitHub org-level groups restrict which repos can use gpu runners
-- **DinD sidecar** — Docker-in-Docker runs as a privileged sidecar; ephemeral pod lifecycle mitigates privilege risk
+- **DinD sidecar** — [Docker](https://docs.docker.com/)-in-Docker runs as a privileged sidecar; ephemeral pod lifecycle mitigates privilege risk
 
 See [Self-Hosted Runners & Webhook Service](self-hosted-runners-and-webhooks.md) for full details.
 
@@ -50,7 +50,7 @@ The webhook service validates all incoming requests via HMAC-SHA256:
 - Each product repo has its own webhook secret stored in Doppler (`dk-alchemy-webhooks` project)
 - Webhook URL includes repo name for secret lookup: `POST /webhooks/{repo}`
 - Requests without valid `X-Webhook-Signature` header are rejected
-- Traefik rate-limiting (30 req/min burst 50) + app-level per-repo limits protect against abuse
+- [Traefik](https://doc.traefik.io/traefik/) rate-limiting (30 req/min burst 50) + app-level per-repo limits protect against abuse
 
 ### Secrets
 
@@ -69,9 +69,9 @@ The webhook service validates all incoming requests via HMAC-SHA256:
 
 ### Policy Enforcement
 
-- [ ] **No admission controller** — no OPA/Gatekeeper or Kyverno to enforce policies in-cluster
+- [ ] **No admission controller** — no OPA/[Gatekeeper](https://open-policy-agent.github.io/gatekeeper/) or [Kyverno](https://kyverno.io/docs/) to enforce policies in-cluster
   - Should enforce: resource limits required, image source restrictions (GHCR only), required labels, no `latest` tags in prod
-- [ ] **No image signing/verification** — images are not signed with cosign or Notation
+- [ ] **No image signing/verification** — images are not signed with [cosign](https://docs.sigstore.dev/cosign/overview/) or Notation
 - [ ] **No pod security standards** — no PodSecurityAdmission or equivalent restricting privileged containers
 
 ### Network
@@ -82,7 +82,7 @@ The webhook service validates all incoming requests via HMAC-SHA256:
 
 ### Supply Chain
 
-- [ ] **GitHub Action versions unpinned** — should pin to SHA, not tag
+- [ ] **[GitHub Actions](https://docs.github.com/en/actions) versions unpinned** — should pin to SHA, not tag
 - [ ] **No dependency audit workflow** — no automated CVE scanning of npm/Docker dependencies
 - [ ] **SBOM not verified** — generated but not consumed (no SBOM-based policy enforcement)
 
@@ -114,7 +114,7 @@ Add **Kyverno** to dk-alchemy's infrastructure as the admission controller. Kyve
 **Phase 3 — Enforce on production**:
 1. Switch production policies to `enforce` mode
 2. Add Kyverno to DR bootstrap order (step 4c, after cert-manager)
-3. Monitor PolicyReport metrics in Grafana
+3. Monitor PolicyReport metrics in [Grafana](https://grafana.com/docs/grafana/latest/)
 
 #### Policies
 
@@ -149,29 +149,37 @@ These policies are also enforced at CI time via the [Standards Compliance](stand
 
 Extend NetworkPolicies from staging to production:
 - Default-deny ingress per namespace
-- Allow only expected traffic (Traefik → app, app → database, app → Redis)
+- Allow only expected traffic (Traefik → app, app → database, app → [Redis](https://redis.io/docs/))
 - Restrict egress to known external endpoints
 
 ### 5. Audit Log Centralization
 
-Aggregate audit logs into Loki:
+Aggregate audit logs into [Loki](https://grafana.com/docs/loki/latest/):
 - ArgoCD audit events
 - Doppler audit logs (via API polling or webhook)
 - GitHub audit log (via API polling)
-- Kubernetes audit log (K3s audit policy)
+- Kubernetes audit log ([K3s](https://docs.k3s.io/) audit policy)
 
 Create a Grafana dashboard for security-relevant events.
 
 ### 6. Compliance Framework
 
-Compliance planning and evidence collection live in the [`dk-compliance-v2`](https://github.com/data-kinetic/dk-compliance-v2) repo. The `compliance-and-attestation/` directory in dk-planning previously served as a placeholder and now cross-references dk-compliance-v2 as the canonical location.
+Compliance management is centralized in [`dk-compliance-v2`](https://github.com/data-kinetic/dk-compliance-v2), covering five frameworks across two entities:
 
-If pursuing SOC 2 or similar:
-- Document access control policies
-- Schedule quarterly access reviews
-- Enable MFA for all admin accounts (GitHub, Doppler, Grafana, Proxmox)
-- Data classification for PII/PHI in PostgreSQL
-- Encryption at rest for data stores
+| Entity | Frameworks | Status |
+|--------|-----------|--------|
+| BehaviorLabs.ai | SOC 2 Type II, HIPAA, ISO 27001 | SOC 2 in progress (Phase 02 — migration from Drata to [CISO Assistant](https://github.com/intuitem/ciso-assistant-community)) |
+| Data Kinetic Corporation | NIST 800-171 rev3, CMMC Level 2 | Not started (Phase 04) |
+
+**Platform controls that satisfy compliance requirements:**
+- **Access control:** [ArgoCD](https://argo-cd.readthedocs.io/) AppProject RBAC, namespace isolation, [Doppler](https://docs.doppler.com/) role-based access
+- **Audit logging:** [Kubernetes](https://kubernetes.io/docs/) audit logs, GitHub audit log (API polling), [Grafana](https://grafana.com/docs/grafana/latest/) security dashboard (planned)
+- **Change management:** GitOps-only deployments, PR review gates, standards compliance CI checks
+- **Encryption at rest:** [PostgreSQL](https://www.postgresql.org/docs/) volume encryption, [MinIO](https://min.io/docs/minio/linux/index.html) server-side encryption, [Redis](https://redis.io/docs/) AOF on encrypted volumes
+- **MFA:** Required for GitHub, Doppler, Grafana, [Proxmox](https://pve.proxmox.com/pve-docs/) admin accounts
+- **Supply chain:** SBOM generation, provenance attestation, image scanning via CI
+
+See [Compliance & Attestation](compliance-and-attestation/) for the full program overview, phase plan, and ownership matrix.
 
 ## Related Documentation
 

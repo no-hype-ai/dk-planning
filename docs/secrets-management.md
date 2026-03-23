@@ -2,7 +2,7 @@
 
 ## Overview
 
-All secrets are managed via **Doppler** — no secrets are stored in Git. The Doppler Operator runs in-cluster and syncs secrets from Doppler SaaS into Kubernetes Secrets via `DopplerSecret` CRDs.
+All secrets are managed via **[Doppler](https://docs.doppler.com/)** — no secrets are stored in Git. The Doppler Operator runs in-cluster and syncs secrets from Doppler SaaS into [Kubernetes](https://kubernetes.io/docs/) Secrets via `DopplerSecret` CRDs.
 
 ## Architecture
 
@@ -24,23 +24,23 @@ Doppler SaaS (source of truth)
 | Component | Namespace | Purpose |
 |-----------|-----------|---------|
 | **Doppler Operator** | `doppler-operator-system` | Watches `DopplerSecret` CRDs, syncs to K8s Secrets |
-| **DopplerSecret CRDs** (infra) | `infra` | Infrastructure secrets (DB, Redis, MinIO, Alloy) |
+| **DopplerSecret CRDs** (infra) | `infra` | Infrastructure secrets (DB, [Redis](https://redis.io/docs/), [MinIO](https://min.io/docs/minio/linux/index.html), [Alloy](https://grafana.com/docs/alloy/latest/)) |
 | **DopplerSecret CRDs** (apps) | per-namespace | Application secrets per product/environment |
-| **ArgoCD Doppler secrets** | `argocd` | ArgoCD credentials, repo access tokens |
+| **[ArgoCD](https://argo-cd.readthedocs.io/) Doppler secrets** | `argocd` | ArgoCD credentials, repo access tokens |
 
 ## Doppler Projects
 
 | Project | Configs | Used By |
 |---------|---------|---------|
 | `behaviorlabs-applications` | `dev`, `stg`, `prd` | behavior-labs-ai (API, app, admin) |
-| `behaviorlabs-infrastructure` | — | PostgreSQL, Redis, MinIO, Alloy |
+| `behaviorlabs-infrastructure` | — | [PostgreSQL](https://www.postgresql.org/docs/), Redis, MinIO, Alloy |
 | `dk-alchemy-runners` | `prd` | GitHub App credentials for ARC v2 self-hosted runners |
-| `dk-alchemy-webhooks` | `prd` | Webhook service secrets: GitHub App, per-repo HMAC secrets, ArgoCD token, Slack URL, Grafana API key |
+| `dk-alchemy-webhooks` | `prd` | Webhook service secrets: GitHub App, per-repo HMAC secrets, ArgoCD token, [Slack](https://api.slack.com/) URL, Grafana API key |
 
 ## Build-Time Secrets
 
-Docker builds use Doppler CLI with `--mount=type=secret` (not baked into image layers):
-- `DOPPLER_TOKEN` passed as a Docker build secret in GitHub Actions
+[Docker](https://docs.docker.com/) builds use Doppler CLI with `--mount=type=secret` (not baked into image layers):
+- `DOPPLER_TOKEN` passed as a Docker build secret in [GitHub Actions](https://docs.github.com/en/actions)
 - Doppler CLI installed in Dockerfiles, fetches secrets at build time
 
 ## Local Development
@@ -61,7 +61,7 @@ Each product repo includes `DopplerSecret` manifests in its ArgoCD app definitio
 
 - **No rotation schedule** — secrets are manually rotated ad-hoc
 - **No expiry tracking** — no alerts for credentials nearing expiry
-- **No audit trail in observability** — Doppler audit logs are not integrated with Loki
+- **No audit trail in observability** — Doppler audit logs are not integrated with [Loki](https://grafana.com/docs/loki/latest/)
 - **No automation for new projects** — setting up a new Doppler project is manual
 
 ## Recommendations
@@ -79,7 +79,7 @@ Define rotation cadences by secret type:
 
 ### 2. Expiry Alerting
 
-- Add Grafana alerts for secrets nearing rotation deadlines
+- Add [Grafana](https://grafana.com/docs/grafana/latest/) alerts for secrets nearing rotation deadlines
 - Integrate Doppler audit logs with Loki for compliance visibility
 - Create a `secrets-health` dashboard in Grafana
 

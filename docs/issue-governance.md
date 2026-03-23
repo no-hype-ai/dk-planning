@@ -50,7 +50,7 @@ Generated as GitHub issues on schedule (Monday 8 AM UTC):
 
 - All scripts support `--dry-run` (default) and `--apply` modes
 - Driven by `GH_TOKEN` and `GITHUB_REPOSITORY` environment variables
-- Run via GitHub Actions scheduled workflows
+- Run via [GitHub Actions](https://docs.github.com/en/actions) scheduled workflows
 
 ## Status Label State Machine
 
@@ -130,7 +130,7 @@ Core policies stay consistent; product-specific settings are configurable:
 
 ### 3. Connect to Observability Alerts
 
-Bridge Grafana alerts to the issue governance system (see [Incident Management](incident-management.md#automated-error-to-issue-pipeline)):
+Bridge [Grafana](https://grafana.com/docs/grafana/latest/) alerts to the issue governance system (see [Incident Management](incident-management.md#automated-error-to-issue-pipeline)):
 - Auto-created issues from alerts enter the same governance pipeline
 - Triage evidence is pre-populated from alert context (dashboard links, log queries, trace IDs)
 - Risk prioritization applies automatically

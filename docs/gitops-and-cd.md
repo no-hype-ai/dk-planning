@@ -17,8 +17,8 @@ Tier 1: Bootstrap (manual one-time kubectl apply)
 
 Tier 2: ApplicationSets (auto-generated)
   ├── dk-infrastructure        — git directory generator over k8s/infrastructure/*
-  ├── dk-infrastructure-staging — list generator (11 components, overlays/staging)
-  ├── dk-edge-infrastructure   — matrix generator (2 edge LBs x 3 components)
+  ├── dk-infrastructure-staging — list generator (9 components, overlays/staging)
+  ├── dk-edge-infrastructure   — matrix generator (2 edge clusters × 2 shared) + list (2 keepalived) = 6 Apps
   └── dk-apps / dk-apps-staging — reserved for future mono-repo workloads
 
 Tier 3: External App Bootstraps
@@ -52,8 +52,8 @@ Reusable Kustomize components in `k8s/components/`:
 | ApplicationSet | Generator | Source | Target |
 |----------------|-----------|--------|--------|
 | `dk-infrastructure` | git directory | `k8s/infrastructure/*` | `overlays/prod` → `infra` namespace |
-| `dk-infrastructure-staging` | list (11 components) | `k8s/infrastructure/*` | `overlays/staging` → `infra-staging` namespace |
-| `dk-edge-infrastructure` | matrix (2 clusters x 3 components) | `k8s/edge/*` | phantom (10.0.0.2), venom (10.0.0.3) |
+| `dk-infrastructure-staging` | list (9 components: doppler-secrets, postgres, redis, minio, loki, mimir, tempo, opensearch, grafana) | `k8s/infrastructure/*` | `overlays/staging` → `infra-staging` namespace |
+| `dk-edge-infrastructure` | matrix generator (2 edge clusters × 2 shared components: traefik, routes) + list (2 keepalived) = 6 Applications | `k8s/edge/*` | phantom (10.0.0.2), venom (10.0.0.3) |
 | `dk-apps` / `dk-apps-staging` | (empty) | — | Reserved |
 
 ### Currently Bootstrapped External Apps
@@ -75,6 +75,45 @@ Reusable Kustomize components in `k8s/components/`:
 | DK-OS | `data-kinetic-projects/DK-OS` | `main` | `staging` |
 | Lithium-5 | `data-kinetic/lithium-5` | `main` | `staging` |
 | DK Compliance v2 | `data-kinetic/dk-compliance-v2` | `main` | `staging` |
+
+## Local Development
+
+Local/dev environments are **product-repo-specific** and not managed by [ArgoCD](https://argo-cd.readthedocs.io/). Unlike staging and production which use the ArgoCD GitOps loop, local development typically runs via [Docker Compose](https://docs.docker.com/compose/) or [k3d](https://k3d.io/) with secrets injected directly from [Doppler](https://docs.doppler.com/).
+
+### Convention
+
+Product repos may include a `.gitops/local/apps/` directory for local environment configuration. This is optional — not all repos need it.
+
+```
+.gitops/
+  <app>-root-app-prod.yaml
+  <app>-root-app-staging.yaml
+  prod/apps/
+    ...
+  staging/apps/
+    ...
+  local/apps/              # Optional — local dev config
+    docker-compose.yaml
+    .env.example
+```
+
+### Reference: behavior-labs-ai
+
+`behavior-labs-ai` maintains a `.gitops/local/apps/` directory with Docker Compose configuration for running the full stack locally. This pattern is recommended for repos where developers need a full local environment.
+
+### dk-cli Integration
+
+The [`dk` CLI tool](dk-cli.md) provides lifecycle commands for local development:
+
+| Command | Purpose |
+|---------|---------|
+| `dk up` | Start local environment (docker-compose or k3d) |
+| `dk down` | Stop and clean up local environment |
+| `dk logs` | Stream logs from local services |
+| `dk status` | Show running services and health |
+| `dk secrets` | Inject Doppler secrets for local dev |
+
+The `dk-template` scaffolding generates the local development structure automatically. See [Template Repository](template-repo.md) and [dk-cli](dk-cli.md) for details.
 
 ## Image Promotion Strategy
 

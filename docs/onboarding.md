@@ -9,7 +9,7 @@ Repos pending onboarding: dk-compliance-v2, DK-OS, carbon-5, lithium-5.
 ## Prerequisites
 
 - [ ] Repository exists in the `data-kinetic` GitHub org (or cross-org credentials configured for `data-kinetic-projects`)
-- [ ] Doppler project created with `dev`, `stg`, `prd` configs
+- [ ] [Doppler](https://docs.doppler.com/) project created with `dev`, `stg`, `prd` configs
 - [ ] Slack channel created for team alerts (e.g., `#<product>-alerts`)
 
 ## 1. Repository Scaffold
@@ -72,12 +72,12 @@ Submit a PR to dk-alchemy adding:
 ## 3. CI/CD Pipeline
 
 - [ ] Add `build-deploy.yaml` workflow (use shared workflow when available)
-  - Docker build with Doppler secrets injection
-  - GHCR push with standard tagging (`staging-<sha7>`, `<version>`, `main-<sha7>`)
+  - [Docker](https://docs.docker.com/) build with Doppler secrets injection
+  - [GHCR](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry) push with standard tagging (`staging-<sha7>`, `<version>`, `main-<sha7>`)
   - SBOM and provenance attestation
 - [ ] **Select runner labels** — choose the appropriate self-hosted runner class for each job:
   - `runs-on: [self-hosted, linux, standard]` — linting, testing, kustomize validation
-  - `runs-on: [self-hosted, linux, large]` — Docker builds, Turborepo, Playwright
+  - `runs-on: [self-hosted, linux, large]` — Docker builds, [Turborepo](https://turbo.build/repo/docs), [Playwright](https://playwright.dev/docs/intro)
   - `runs-on: [self-hosted, linux, gpu]` — ML workloads (requires runner group approval)
   - See [Self-Hosted Runners & Webhook Service](self-hosted-runners-and-webhooks.md) for details
 - [ ] **Add webhook notification step** — replace direct kustomize commits with a webhook call to `webhooks.datakinetic.com`:
@@ -93,7 +93,7 @@ Submit a PR to dk-alchemy adding:
   ```
   - Request a per-repo webhook secret (`DK_WEBHOOK_SECRET`) — stored in Doppler `dk-alchemy-webhooks` project
 - [ ] Configure `dorny/paths-filter` for smart change detection per service
-- [ ] Add kubeconform and kustomize-validate CI checks for `k8s/` manifests
+- [ ] Add [kubeconform](https://github.com/yannh/kubeconform) and kustomize-validate CI checks for `k8s/` manifests
 - [ ] Set up branch protection on `main` and `staging`
 
 ## 4. Secrets
@@ -134,7 +134,7 @@ Submit a PR to dk-alchemy adding:
 - [ ] Wrap app root in `AnalyticsProvider`
 - [ ] Call `useIdentifyUser()` after authentication
 - [ ] Define events following `<domain>.<action>` naming convention
-- [ ] Set up feature flags in PostHog with matching flag keys in code
+- [ ] Set up feature flags in [PostHog](https://posthog.com/docs) with matching flag keys in code
 
 ## 8. Issue Governance
 
@@ -161,7 +161,31 @@ The following Kustomize components (from `dk-alchemy k8s/components/`) should be
 | `grafana-dashboards` | Services with custom dashboards | Services contributing `monitoring/dashboards/` |
 | `grafana-alerts` | Services with custom alerts | Services contributing `monitoring/alerts/` |
 
-Include components in your overlay's `kustomization.yaml`:
+Include components in your overlay's `kustomization.yaml`. The relative paths navigate from the overlay directory up to the shared `components/` directory in dk-alchemy:
+
+```
+k8s/
+├── apps/<service>/
+│   ├── base/
+│   │   ├── deployment.yaml
+│   │   ├── service.yaml
+│   │   └── kustomization.yaml
+│   └── overlays/
+│       ├── prod/
+│       │   └── kustomization.yaml   ← YOU ARE HERE
+│       └── staging/
+│           └── kustomization.yaml
+└── components/                      ← ../../../../components/
+    ├── doppler-secret/
+    ├── otlp-collector/
+    ├── hpa-production/
+    ├── pdb-standard/
+    ├── grafana-dashboards/
+    └── grafana-alerts/
+```
+
+> **Note:** [Kustomize](https://kubectl.docs.kubernetes.io/references/kustomize/) requires literal relative paths for components — variables and aliases are not supported.
+
 ```yaml
 # k8s/apps/<service>/overlays/prod/kustomization.yaml
 components:
@@ -206,7 +230,7 @@ The automated [PR Review Service](pr-review-service.md) will review PRs targetin
 - [ ] PodDisruptionBudgets
 - [ ] HorizontalPodAutoscaler (include HPA Kustomize component)
 - [ ] Resource requests and limits set
-- [ ] Database migrations as ArgoCD PreSync hooks (if applicable)
+- [ ] Database migrations as [ArgoCD](https://argo-cd.readthedocs.io/) PreSync hooks (if applicable)
 
 ## 13. Documentation
 
@@ -222,7 +246,7 @@ After completing all steps, verify:
 - [ ] ArgoCD shows the product's Applications as synced and healthy
 - [ ] Pushing to `staging` triggers build → image push → webhook notification → webhook service commits kustomize update → ArgoCD sync → deployment
 - [ ] Health endpoints respond correctly
-- [ ] Telemetry appears in Grafana (logs in Loki, metrics in Mimir, traces in Tempo)
+- [ ] Telemetry appears in [Grafana](https://grafana.com/docs/grafana/latest/) (logs in [Loki](https://grafana.com/docs/loki/latest/), metrics in [Mimir](https://grafana.com/docs/mimir/latest/), traces in [Tempo](https://grafana.com/docs/tempo/latest/))
 - [ ] Dashboards and alerts are visible in Grafana
 - [ ] Slack alerts fire for test conditions
 - [ ] PostHog events appear (if applicable)
@@ -237,7 +261,7 @@ After completing all steps, verify:
 - [Standards Compliance](standards-compliance.md) — CI/CD standards enforcement
 - [PR Review Service](pr-review-service.md) — automated PR review
 - [Observability](observability.md) — LGTM stack connection
-- [Application Instrumentation](application-instrumentation.md) — OTel SDK setup
+- [Application Instrumentation](application-instrumentation.md) — [OTel](https://opentelemetry.io/docs/) SDK setup
 - [Product Analytics](product-analytics.md) — PostHog integration
 - [Secrets Management](secrets-management.md) — Doppler setup
 - [Issue Governance](issue-governance.md) — governance scripts

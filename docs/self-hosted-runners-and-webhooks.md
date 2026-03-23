@@ -1,15 +1,17 @@
 # Self-Hosted Runners & Webhook Service
 
+> **Status:** Not yet implemented. All CI currently runs on GitHub-hosted runners (`ubuntu-latest`). The webhook service described below is superseded by the [dk-alchemy Platform API](platform-api.md). This document is retained as a design reference for the planned runner migration.
+
 ## Overview
 
 Two related initiatives that improve CI/CD reliability, performance, and cross-repo coordination:
 
-1. **Self-hosted GitHub Actions runners** — ARC v2 on K3s, replacing GitHub-hosted runners with ephemeral pods on penguin/krang
-2. **Webhook service** — centralized FastAPI service in dk-alchemy that replaces per-repo CI-driven kustomize commits with a secure webhook-based pattern
+1. **Self-hosted [GitHub Actions](https://docs.github.com/en/actions) runners** — ARC v2 on [K3s](https://docs.k3s.io/), replacing GitHub-hosted runners with ephemeral pods on penguin/krang
+2. **Webhook service** — centralized [FastAPI](https://fastapi.tiangolo.com/) service in dk-alchemy that replaces per-repo CI-driven [Kustomize](https://kubectl.docs.kubernetes.io/references/kustomize/) commits with a secure webhook-based pattern
 
 ### Why
 
-- **Runners:** GitHub-hosted runners (2 vCPU / 7GB RAM / 14GB SSD) are undersized for Docker multi-stage builds, Turborepo monorepos, and Playwright tests. Penguin and krang have significant spare capacity. Metered GitHub Actions minutes add up across 6+ active repos.
+- **Runners:** GitHub-hosted runners (2 vCPU / 7GB RAM / 14GB SSD) are undersized for [Docker](https://docs.docker.com/) multi-stage builds, [Turborepo](https://turbo.build/repo/docs) monorepos, and [Playwright](https://playwright.dev/docs/intro) tests. Penguin and krang have significant spare capacity. Metered GitHub Actions minutes add up across 6+ active repos.
 - **Webhooks:** Each product repo's CI independently commits kustomize tag changes to its own overlays — fragile, inconsistent, and requires each repo to have write access to its own `k8s/` directory. A centralized webhook service owns all kustomize mutations, improving security and consistency.
 
 ### Confirmed Decisions
@@ -42,9 +44,9 @@ GitHub.com ──webhook──► ARC Controller (arc-system namespace)
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | ARC version | **v2** | v1 deprecated. v2 uses AutoscalingRunnerSet CRDs, true per-job ephemeral pods |
-| Container builds | **Docker-in-Docker (privileged sidecar)** | Existing Dockerfiles use `--mount=type=secret` for Doppler. Kaniko doesn't support this. Buildah would require Dockerfile rewrites. Ephemeral pods mitigate privilege risk. |
+| Container builds | **Docker-in-Docker (privileged sidecar)** | Existing Dockerfiles use `--mount=type=secret` for [Doppler](https://docs.doppler.com/). Kaniko doesn't support this. Buildah would require Dockerfile rewrites. Ephemeral pods mitigate privilege risk. |
 | Workspace storage | **emptyDir (ephemeral)** | No state between jobs. Prevents data leakage. |
-| Build cache | **Registry-based (`--cache-from`/`--cache-to` GHCR)** | No shared PVC needed. BuildKit pushes/pulls layer cache to `ghcr.io/<repo>/cache`. |
+| Build cache | **Registry-based (`--cache-from`/`--cache-to` [GHCR](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry))** | No shared PVC needed. BuildKit pushes/pulls layer cache to `ghcr.io/<repo>/cache`. |
 | Turborepo cache | **Self-hosted remote cache on MinIO** | Configure `TURBO_API` pointing to MinIO S3 endpoint |
 | Auth | **GitHub App** (not PAT) | Short-lived tokens (1h), scoped per-repo, auditable |
 | Node placement | **nodeAffinity** on runner class | standard/large → penguin, gpu → krang |
@@ -53,7 +55,7 @@ GitHub.com ──webhook──► ARC Controller (arc-system namespace)
 
 | Class | Labels | Resources | Node | Max Scale | Use Cases |
 |-------|--------|-----------|------|-----------|-----------|
-| **standard** | `self-hosted, linux, standard` | 2C/4Gi → 4C/8Gi | penguin | 10 | Linting, testing, kustomize validation |
+| **standard** | `self-hosted, linux, standard` | 2C/4Gi → 4C/8Gi | penguin | 10 | Linting, testing, Kustomize validation |
 | **large** | `self-hosted, linux, large` | 8C/32Gi → 16C/64Gi | penguin | 5 | Turborepo builds, Docker multi-stage, Playwright |
 | **gpu** | `self-hosted, linux, gpu` | 4C/16Gi + 1 GPU → 8C/32Gi | krang | 4 | ML workloads, NeMo, vLLM testing |
 
@@ -107,8 +109,8 @@ Both directories are auto-discovered by the `dk-infrastructure` ApplicationSet (
 
 ### Observability
 
-- **Metrics**: ARC controller exposes Prometheus metrics → Alloy scrapes via `prometheus.io/scrape` annotation
-- **Logs**: Pod stdout/stderr → Alloy DaemonSet → Loki (standard collection path)
+- **Metrics**: ARC controller exposes Prometheus metrics → [Grafana Alloy](https://grafana.com/docs/alloy/latest/) scrapes via `prometheus.io/scrape` annotation
+- **Logs**: Pod stdout/stderr → Alloy DaemonSet → [Loki](https://grafana.com/docs/loki/latest/) (standard collection path)
 - **Dashboard**: `grafana/dashboards/infrastructure/arc-runners.json`
   - Active runners by class, queue depth, job duration histograms, resource usage, scale events
 - **Alerts** (append to `grafana/alerts/infrastructure.yaml`):
@@ -162,7 +164,7 @@ GitHub / Product Repos
 | Git operations | **GitHub REST API** (not git clone/push) | Stateless. Read kustomization.yaml → update YAML → commit via API. No git credentials on disk. |
 | Auth for git | **GitHub App installation token** | Short-lived (1h), scoped, auditable. Better than PAT. |
 | Multi-tenant secrets | **Per-repo webhook secrets in Doppler** | Each product repo gets its own HMAC secret. Webhook URL includes repo name for secret lookup. |
-| Rate limiting | **Traefik middleware + app-level** | Traefik: 30 req/min burst 50. App: per-repo, per-IP limits. |
+| Rate limiting | **[Traefik](https://doc.traefik.io/traefik/) middleware + app-level** | Traefik: 30 req/min burst 50. App: per-repo, per-IP limits. |
 
 ### Service Structure
 
@@ -242,7 +244,7 @@ dk-alchemy-webhooks (Doppler project)
     GITHUB_APP_PRIVATE_KEY          # GitHub App key
 ```
 
-### K8s Manifests
+### [K8s](https://kubernetes.io/docs/) Manifests
 
 ```
 k8s/infrastructure/webhook-service/
@@ -263,7 +265,7 @@ Auto-discovered by the `dk-infrastructure` ApplicationSet. The edge route is pic
 
 ### Observability
 
-- **Traces**: `opentelemetry-instrumentation-fastapi` → Alloy OTLP → Tempo
+- **Traces**: `opentelemetry-instrumentation-fastapi` → Alloy OTLP → [Tempo](https://grafana.com/docs/tempo/latest/)
 - **Metrics** (`/metrics`): request rate, duration, signature failures, handler errors — all by repo
 - **Dashboard**: `grafana/dashboards/infrastructure/webhook-service.json`
   - Request rate by repo, handler success/failure, signature validation, latency percentiles
@@ -298,7 +300,7 @@ This replaces the existing `update-gitops` job that commits `newTag` changes dir
 ## How the Two Initiatives Connect
 
 - **Separate webhook paths**: ARC v2 controller manages its own webhook listener for `workflow_job` events (runner scaling). This is distinct from the webhook service's `/webhooks/*` endpoints.
-- **Shared observability**: Both emit metrics to Alloy, logs to Loki, and are monitored via Grafana dashboards in the `infrastructure/` folder.
+- **Shared observability**: Both emit metrics to Alloy, logs to Loki, and are monitored via [Grafana](https://grafana.com/docs/grafana/latest/) dashboards in the `infrastructure/` folder.
 - **Shared security patterns**: Both use Doppler for secrets, NetworkPolicies for traffic control, and Traefik TLS for external endpoints.
 - **Complementary**: Runners execute the builds; the webhook service handles what happens after a build completes (tag updates, syncs, notifications).
 
@@ -307,7 +309,7 @@ This replaces the existing `update-gitops` job that commits `newTag` changes dir
 | Week | Initiative 1 (Runners) | Initiative 2 (Webhooks) |
 |------|----------------------|------------------------|
 | 1 | Deploy ARC controller + standard runners | Create webhook-service source + Dockerfile |
-| 2 | Migrate dk-alchemy workflows | Implement handlers (kustomize, ArgoCD, Slack) |
+| 2 | Migrate dk-alchemy workflows | Implement handlers (Kustomize, [ArgoCD](https://argo-cd.readthedocs.io/), Slack) |
 | 3 | Migrate behavior-labs-ai | Add observability, security, tests |
 | 4 | Roll out to remaining repos | Deploy to K8s, register GitHub org webhook |
 | 5 | Deploy gpu runners on krang | Integrate product repos |

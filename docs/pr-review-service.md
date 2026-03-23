@@ -42,7 +42,7 @@ lithium-5/
       rubric_template.md   # Rubric evaluation template
 ```
 
-## OpenHands SDK Integration
+## [OpenHands](https://docs.all-hands.dev/) SDK Integration
 
 The service is built on the OpenHands SDK's `CriticBase` class:
 
@@ -73,9 +73,9 @@ class DKPlatformCritic(CriticBase):
 | Rubric | Weight | What It Checks |
 |--------|--------|---------------|
 | **Security** | 0.30 | No secrets in code, safe auth patterns, no injection vulnerabilities, safe dependency usage |
-| **Platform Standards** | 0.25 | Kustomize patterns, required labels, image tags, webhook integration (auto-generated from [Standards Compliance](standards-compliance.md) definitions) |
+| **Platform Standards** | 0.25 | [Kustomize](https://kubectl.docs.kubernetes.io/references/kustomize/) patterns, required labels, image tags, webhook integration (auto-generated from [Standards Compliance](standards-compliance.md) definitions) |
 | **Code Quality** | 0.25 | Appropriate abstractions, consistent naming, test coverage, documentation |
-| **Observability** | 0.20 | OTel instrumentation, health endpoints, `parseError()` usage, structured logging |
+| **Observability** | 0.20 | [OTel](https://opentelemetry.io/docs/) instrumentation, health endpoints, `parseError()` usage, structured logging |
 
 ### Security Rubric
 
@@ -99,7 +99,7 @@ Checks for:
 
 Auto-generated from `data-kinetic/.github/standards/*.yaml` — the same definitions used by the [Standards Compliance](standards-compliance.md) CI checks. Evaluates:
 - Kustomize overlay patterns and required components
-- Required Kubernetes labels
+- Required [Kubernetes](https://kubernetes.io/docs/) labels
 - Image tag format compliance
 - Webhook notification step in CI workflows
 - Resource requests and limits
@@ -148,7 +148,7 @@ lithium-5/
 
 The deployment uses `nodeAffinity` to schedule on krang (GPU node) and requests 1x A100 GPU via `nvidia.com/gpu: 1` resource.
 
-### Doppler Configuration
+### [Doppler](https://docs.doppler.com/) Configuration
 
 Add to lithium-5's Doppler project (`lithium5-applications`):
 

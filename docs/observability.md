@@ -2,7 +2,7 @@
 
 ## Overview
 
-Data Kinetic runs a self-hosted **LGTM stack** (Loki, Grafana, Tempo, Mimir) managed centrally in dk-alchemy. Grafana Alloy collects all signals (metrics, logs, traces) and routes them to the appropriate backend. Product repos connect via an OTLP Kustomize component.
+Data Kinetic runs a self-hosted **LGTM stack** ([Loki](https://grafana.com/docs/loki/latest/), [Grafana](https://grafana.com/docs/grafana/latest/), [Tempo](https://grafana.com/docs/tempo/latest/), [Mimir](https://grafana.com/docs/mimir/latest/)) managed centrally in dk-alchemy. [Grafana Alloy](https://grafana.com/docs/alloy/latest/) collects all signals (metrics, logs, traces) and routes them to the appropriate backend. Product repos connect via an [OpenTelemetry](https://opentelemetry.io/docs/) (OTLP) [Kustomize](https://kubectl.docs.kubernetes.io/references/kustomize/) component.
 
 For application-level instrumentation (OTel SDK, Sentry migration, health checks), see [Application Instrumentation](application-instrumentation.md).
 
@@ -43,7 +43,7 @@ Alloy runs as a **DaemonSet** with `hostNetwork: true`, tolerating all taints.
 
 | Signal | Source | Method |
 |--------|--------|--------|
-| **Metrics** | kubelet, cAdvisor, kube-state-metrics | Prometheus scrape (30s) |
+| **Metrics** | kubelet, cAdvisor, kube-state-metrics | [Prometheus](https://prometheus.io/docs/) scrape (30s) |
 | **Metrics** | Pods with `prometheus.io/scrape: "true"` | Prometheus scrape (30s) |
 | **Metrics** | Services with `prometheus.io/scrape: "true"` | Prometheus scrape (30s) |
 | **Metrics** | LiteLLM, vLLM GPU | Static scrape targets |
@@ -102,7 +102,9 @@ All run as single-replica StatefulSets on `local-path-bulk`:
 
 ## Alert Rules
 
-25 rules across 4 files in `grafana/alerts/`:
+26 rules across 4 files in `grafana/alerts/`:
+
+Alert rules are organized across 4 files: applications (4 rules), dk-data (12), infrastructure (6), litellm (6).
 
 ### applications.yaml (4 rules)
 
@@ -124,7 +126,7 @@ All run as single-replica StatefulSets on `local-path-bulk`:
 | `pv-near-full` | PV >85% full for 15m | warning |
 | `pv-critical` | PV >95% full for 5m | critical |
 
-### dk-data.yaml (9 rules)
+### dk-data.yaml (12 rules)
 
 Sync failures, backend down, quarantine queue depth, API latency, transform duration, error rate, stale sources, OOM kills, error log spikes (Loki-based).
 
@@ -136,17 +138,14 @@ LLM proxy down, high error rate, rate-limiting, latency, budget exhaustion, toke
 
 ### Contact Points
 
-| Contact Point | Slack Channel | Scope |
-|---------------|---------------|-------|
-| `platform-slack` | `#dk-alerts` | Default receiver; `team=platform` |
-| `dk-data-slack` | `#dk-data-fe` | `team=data-platform` |
+| Contact Point | Channel | Team |
+|--------------|---------|------|
+| `platform-slack` | #dk-alerts | Platform (default) |
+| `dk-data-slack` | #dk-data-fe | DK Data |
 
 ### Notification Policy
 
-- Default receiver: `platform-slack`
-- Route by `team` label
-- Group by: alertname, severity
-- Group wait: 30s, group interval: 5m, repeat interval: 4h
+**Notification routing:** Alerts route by `team` label, grouped by `alertname` + `severity`. Group wait: 30s, group interval: 5m, repeat interval: 4h.
 
 ### Gap
 
@@ -158,11 +157,17 @@ No PagerDuty, OpsGenie, or phone escalation. See [Incident Management](incident-
 
 - Deployed in `probe` namespace
 - Routes through edge LB (10.0.0.2) to validate the full request path
-- Probe types: HTTP (static + auto-discovered via Traefik API), DNS (Route53 via 8.8.8.8), TCP
+- Probe types: HTTP (static + auto-discovered via [Traefik](https://doc.traefik.io/traefik/) API), DNS (Route53 via 8.8.8.8), TCP
 - External validation via check-host.net API (3 vantage points)
 - Metrics: `probe_target_up`, `probe_http_status_code`, `probe_target_latency_seconds`
 - Slack state-change notifications (up/down transitions)
 - 60s interval, 10s timeout
+
+**Probe service targets (18 total):**
+- **HTTP probes (11):** prod/staging app, API, and admin endpoints + ArgoCD, Grafana, LiteLLM, bare domain
+- **External probes (5):** via check-host.net — validates WAN ingress from outside the network for app, ArgoCD, Grafana, LiteLLM, Enercore
+- **DNS probes (6):** Route53 A record resolution via public DNS (8.8.8.8), all resolve to 66.68.93.103 (WAN IP)
+- **TCP probes (6):** k3s-traefik (10.0.0.11:443), edge phantom/venom (10.0.0.2/3:443), edge API (10.0.0.2:8080), preview-vm (10.0.0.51:80)
 
 ### sentinel-probe (External, AWS EC2)
 

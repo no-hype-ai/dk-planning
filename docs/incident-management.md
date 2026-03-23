@@ -2,7 +2,7 @@
 
 ## Overview
 
-Incident management covers on-call escalation, SLOs/error budgets, and the bridge between observability alerts and human response. Today this is **Slack-only** with no formal on-call rotation or SLO framework. This document defines the current state and target model.
+Incident management covers on-call escalation, SLOs/error budgets, and the bridge between observability alerts and human response. Today this is **[Slack](https://api.slack.com/)-only** with no formal on-call rotation or SLO framework. This document defines the current state and target model.
 
 ## Current State
 
@@ -43,8 +43,8 @@ Incident management covers on-call escalation, SLOs/error budgets, and the bridg
 
 ### Implementation
 
-1. **Mimir recording rules** — precompute SLI metrics (error ratios, latency percentiles)
-2. **Grafana SLO dashboards** — populate the empty `slo/` folder with:
+1. **[Mimir](https://grafana.com/docs/mimir/latest/) recording rules** — precompute SLI metrics (error ratios, latency percentiles)
+2. **[Grafana](https://grafana.com/docs/grafana/latest/) SLO dashboards** — populate the empty `slo/` folder with:
    - Error budget remaining (%)
    - Burn rate over time
    - SLO compliance history
@@ -56,7 +56,7 @@ Incident management covers on-call escalation, SLOs/error budgets, and the bridg
 
 ### Recommended: Grafana OnCall
 
-Deploy **Grafana OnCall** (open-source, self-hosted) in dk-alchemy's infrastructure. Alternative: PagerDuty or OpsGenie if managed service preferred.
+Deploy **[Grafana OnCall](https://grafana.com/docs/oncall/latest/)** (open-source, self-hosted) in dk-alchemy's infrastructure. Alternative: PagerDuty or OpsGenie if managed service preferred.
 
 ### Escalation Tiers
 
@@ -163,7 +163,7 @@ For P0/P1 incidents, create a GitHub issue with label `postmortem` within 48 hou
 
 ### Current State
 
-No deployment notifications — ArgoCD sync successes, failures, and drift are not surfaced.
+No deployment notifications — [ArgoCD](https://argo-cd.readthedocs.io/) sync successes, failures, and drift are not surfaced.
 
 ### Recommendation
 

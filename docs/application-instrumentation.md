@@ -2,7 +2,7 @@
 
 ## Overview
 
-Application-level observability covers how product repos emit telemetry (traces, metrics, logs), handle errors, and expose health checks. Today, behavior-labs-ai is the only repo with full instrumentation, running **dual Sentry + OpenTelemetry**. The target state is OTel-only with a shared package across all repos.
+Application-level observability covers how product repos emit telemetry (traces, metrics, logs), handle errors, and expose health checks. Today, behavior-labs-ai is the only repo with full instrumentation, running **dual [Sentry](https://docs.sentry.io/) + [OpenTelemetry](https://opentelemetry.io/docs/)**. The target state is OTel-only with a shared package across all repos.
 
 ## Current State — behavior-labs-ai (Reference)
 
@@ -22,7 +22,7 @@ The `packages/observability/` package (`@repo/observability`) wraps both `@sentr
 | `./keys` | Env var validation (`OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_SERVICE_NAME`, Sentry vars) |
 | `./next-config` | `withSentry()` wrapper for Next.js config (source map upload, `/monitoring` tunnel) |
 | `./sentry-user` | `useSentryUser()` React hook — sets Clerk user context in Sentry |
-| `./status` | No-op placeholder for future Grafana-based status checks |
+| `./status` | No-op placeholder for future [Grafana](https://grafana.com/docs/grafana/latest/)-based status checks |
 
 ### Custom Span Attributes
 
@@ -38,8 +38,8 @@ The `PipelineTracer` and span factories emit domain-specific attributes:
 
 | Layer | Details |
 |-------|---------|
-| **NestJS API** | `@sentry/nestjs` + `@sentry/profiling-node`, 10% trace sample, 10% profile sample |
-| **Next.js apps** | `@sentry/nextjs`, `/monitoring` tunnel, source map upload + deletion |
+| **[NestJS](https://docs.nestjs.com/) API** | `@sentry/nestjs` + `@sentry/profiling-node`, 10% trace sample, 10% profile sample |
+| **[Next.js](https://nextjs.org/docs) apps** | `@sentry/nextjs`, `/monitoring` tunnel, source map upload + deletion |
 | **Client-side** | Replay (10% trace, 100% error replay), `maskAllText`, `maskAllInputs`, `blockAllMedia` |
 | **Error capture** | `parseError()` calls both OTel `log.error()` and `Sentry.captureException()` |
 | **Error boundaries** | Global error page + component `ErrorBoundary` → `parseError()` → Sentry |
@@ -50,14 +50,14 @@ The `PipelineTracer` and span factories emit domain-specific attributes:
 
 | Endpoint | App | What It Checks |
 |----------|-----|----------------|
-| `GET /health` | NestJS API | Prisma `SELECT 1` via `@nestjs/terminus` |
+| `GET /health` | NestJS API | [Prisma](https://www.prisma.io/docs) `SELECT 1` via `@nestjs/terminus` |
 | `GET /api/workers/health` | NestJS API | 14 BullMQ queues — error rate, backlog, stale jobs |
 | `GET /api/workers/health/:queue` | NestJS API | Per-queue: active, waiting, failed, avgProcessingTime, successRate |
 | `GET /api/workers/health/dlq/jobs` | NestJS API | Dead letter queue listing (admin-only) |
 | `GET /api/health` | Admin app | Simple `{ status: "ok" }` |
 | `GET /api/dashboard/health` | Admin app | Aggregated: API `/health` + database status (5s timeout) |
 | `GET /api/dk-data/health` | Admin app | DK-Data PostgREST proxy (30s cache, admin-only) |
-| `GET /health` | Client app | Bare `"OK"` for k8s liveness |
+| `GET /health` | Client app | Bare `"OK"` for [Kubernetes](https://kubernetes.io/docs/) liveness |
 
 ### Production Hardening (behavior-labs-ai)
 
@@ -73,9 +73,9 @@ The same error and trace data currently flows to **both** systems:
 
 | Capability | Sentry | Grafana Stack | Overlap? |
 |------------|--------|---------------|----------|
-| Error tracking | `Sentry.captureException()` | OTel logs → Loki | **Yes** |
+| Error tracking | `Sentry.captureException()` | OTel logs → [Loki](https://grafana.com/docs/loki/latest/) | **Yes** |
 | Stack traces | Sentry issues view | Loki + Tempo context | **Yes** |
-| Traces | Sentry Performance (10%) | Tempo (100%) | **Yes** — Tempo gets more |
+| Traces | Sentry Performance (10%) | [Tempo](https://grafana.com/docs/tempo/latest/) (100%) | **Yes** — Tempo gets more |
 | Profiling | `@sentry/profiling-node` (10%) | Not available | Sentry-only |
 | Session replay | Sentry Replay (100% on error) | Not available | Sentry-only |
 | Source maps | Sentry upload | N/A | Sentry-only |
@@ -97,17 +97,17 @@ The same error and trace data currently flows to **both** systems:
 - Remove `@sentry/nextjs`, `@sentry/nestjs`, `@sentry/profiling-node` dependencies
 - Remove `withSentry()` Next.js config wrapper, `/monitoring` tunnel route
 - Remove `useSentryUser()` hook
-- Remove Sentry env vars from Doppler
+- Remove Sentry env vars from [Doppler](https://docs.doppler.com/)
 
 ### Phase 3 — Replace Sentry-Only Features
 
 | Feature | Replacement | Action |
 |---------|-------------|--------|
-| Profiling | **Grafana Pyroscope** | Deploy in dk-alchemy; add Pyroscope SDK to apps |
-| Session replay | **PostHog Recordings** | Enable in PostHog (already integrated) |
-| Frontend RUM | **Grafana Faro** | Add Faro web SDK; sends to Alloy OTLP endpoint |
+| Profiling | **Grafana [Pyroscope](https://grafana.com/docs/pyroscope/latest/)** | Deploy in dk-alchemy; add Pyroscope SDK to apps |
+| Session replay | **[PostHog](https://posthog.com/docs) Recordings** | Enable in PostHog (already integrated) |
+| Frontend RUM | **[Grafana Faro](https://grafana.com/docs/grafana-cloud/monitor-applications/frontend-observability/)** | Add Faro web SDK; sends to [Alloy](https://grafana.com/docs/alloy/latest/) OTLP endpoint |
 | Issue grouping | **LogQL alert grouping** | Group by error fingerprint (message + location hash) |
-| Source maps | **MinIO bucket** | Upload maps to MinIO; reference in OTel log attributes |
+| Source maps | **[MinIO](https://min.io/docs/minio/linux/index.html) bucket** | Upload maps to MinIO; reference in OTel log attributes |
 | Release tracking | **OTel resource attributes** | `service.version` + Grafana dashboard filters |
 
 ## Shared Observability Package (Target)
@@ -126,7 +126,7 @@ Extract `@repo/observability` into a shared package for all product repos:
   └── keys              — env var validation (OTEL_*, service name)
 ```
 
-Publish to GHCR npm registry or a private registry. All product repos consume this instead of reinventing OTel setup.
+Publish to [GHCR](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry) npm registry or a private registry. All product repos consume this instead of reinventing OTel setup.
 
 ## Self-Deployed Monitoring
 
@@ -143,7 +143,7 @@ monitoring/
     <service>.yaml
 ```
 
-dk-alchemy provides Kustomize components (`grafana-dashboards`, `grafana-alerts`) that create ConfigMaps from these directories, labeled for Grafana's provisioning to pick up. Product repos include these components in their kustomize overlays — dashboards deploy with the app, no dk-alchemy PRs needed.
+dk-alchemy provides [Kustomize](https://kubectl.docs.kubernetes.io/references/kustomize/) components (`grafana-dashboards`, `grafana-alerts`) that create ConfigMaps from these directories, labeled for Grafana's provisioning to pick up. Product repos include these components in their kustomize overlays — dashboards deploy with the app, no dk-alchemy PRs needed.
 
 ## Health Check Standard
 

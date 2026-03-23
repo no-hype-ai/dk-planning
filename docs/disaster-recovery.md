@@ -10,15 +10,15 @@ This document covers backup strategy, recovery procedures, and multi-cluster rea
 
 | Component | DR Capability | Details |
 |-----------|--------------|---------|
-| **ArgoCD state** | Fully recoverable | All Application/ApplicationSet definitions are in dk-alchemy's `.gitops/` — `kubectl apply -k .gitops/repositories/` rebuilds everything |
+| **[ArgoCD](https://argo-cd.readthedocs.io/) state** | Fully recoverable | All Application/ApplicationSet definitions are in dk-alchemy's `.gitops/` — `kubectl apply -k .gitops/repositories/` rebuilds everything |
 | **Infrastructure manifests** | Fully recoverable | All in Git (dk-alchemy `k8s/infrastructure/`) |
 | **Application manifests** | Fully recoverable | All in Git (per product repo `.gitops/` and `k8s/`) |
-| **Secrets** | Recoverable via Doppler | Doppler Operator re-syncs from SaaS on pod restart |
+| **Secrets** | Recoverable via [Doppler](https://docs.doppler.com/) | Doppler Operator re-syncs from SaaS on pod restart |
 | **sentinel-probe** | External monitoring | AWS EC2 + WireGuard; detects outages from outside |
 | **DR scripts** | Partial | `scripts/sentinel/` has provisioning and WireGuard setup |
-| **PostgreSQL** | CloudNativePG | Has backup capabilities but backup schedule/target not documented here |
-| **MinIO** | Distributed mode | Data replication within cluster |
-| **Observability data** | Not backed up | Loki/Mimir/Tempo on local-path-bulk; loss = loss of 30 days of metrics/logs/traces |
+| **[PostgreSQL](https://www.postgresql.org/docs/)** | CloudNativePG | Has backup capabilities but backup schedule/target not documented here |
+| **[MinIO](https://min.io/docs/minio/linux/index.html)** | Distributed mode | Data replication within cluster |
+| **Observability data** | Not backed up | [Loki](https://grafana.com/docs/loki/latest/)/[Mimir](https://grafana.com/docs/mimir/latest/)/[Tempo](https://grafana.com/docs/tempo/latest/) on local-path-bulk; loss = loss of 30 days of metrics/logs/traces |
 
 ### What's Missing
 
@@ -65,8 +65,8 @@ If the cluster is rebuilt from scratch:
 |------------|---------------|-------------------|------------|
 | PostgreSQL | CloudNativePG scheduled backups (daily full + continuous WAL archiving to MinIO/S3) | `kubectl cnpg restore <cluster> --backup <name>` or PITR with `--target-time` flag. Restore creates a new cluster from backup; update ArgoCD Application to point at recovered cluster. | 1h (continuous WAL) |
 | MinIO | Distributed mode provides in-cluster redundancy. For off-cluster backup: scheduled `mc mirror` to external S3 bucket (daily). | `mc mirror` from backup S3 to restored MinIO. Verify bucket policies post-restore. | 4h (daily mirror) |
-| Redis | RDB snapshots via sentinel (default: every 15m if 1+ write). AOF disabled — acceptable for cache/ephemeral use. | Rebuild from scratch; Redis is used as cache/message broker. Persistent state lives in PostgreSQL. For queues: BullMQ jobs will be re-enqueued by producers on reconnect. | N/A (cache) |
-| OpenSearch | Snapshot to MinIO via repository plugin (daily). | Register snapshot repo, `POST /_snapshot/<repo>/<snapshot>/_restore`. Verify index health post-restore. Needs investigation: snapshot automation not yet configured. | 4h (daily snapshot, once configured) |
+| [Redis](https://redis.io/docs/) | RDB snapshots via sentinel (default: every 15m if 1+ write). AOF disabled — acceptable for cache/ephemeral use. | Rebuild from scratch; Redis is used as cache/message broker. Persistent state lives in PostgreSQL. For queues: BullMQ jobs will be re-enqueued by producers on reconnect. | N/A (cache) |
+| [OpenSearch](https://opensearch.org/docs/latest/) | Snapshot to MinIO via repository plugin (daily). | Register snapshot repo, `POST /_snapshot/<repo>/<snapshot>/_restore`. Verify index health post-restore. Needs investigation: snapshot automation not yet configured. | 4h (daily snapshot, once configured) |
 | Observability (Loki/Mimir/Tempo) | None | Accept data loss; rebuild from apps re-emitting. 30-day retention means full history is never critical. | N/A (ephemeral) |
 
 ### RTO/RPO Targets
@@ -124,8 +124,8 @@ The `dk-edge-infrastructure` ApplicationSet's **matrix generator** (2 clusters x
 
 ### Path to Multi-Cluster
 
-1. **Active-passive:** Second K3s cluster on standby, ArgoCD syncs manifests but apps scaled to 0. On failover: scale up, update DNS.
-2. **Active-active:** Both clusters serve traffic, Keepalived or DNS-based failover. Requires shared database (CNPG standby replica) and shared object storage.
+1. **Active-passive:** Second [K3s](https://docs.k3s.io/) cluster on standby, ArgoCD syncs manifests but apps scaled to 0. On failover: scale up, update DNS.
+2. **Active-active:** Both clusters serve traffic, [Keepalived](https://www.keepalived.org/manpage.html) or DNS-based failover. Requires shared database (CNPG standby replica) and shared object storage.
 3. **Edge expansion:** Add more edge LB nodes using the existing matrix generator pattern — extend from 2 to N nodes.
 
 ## Testing
@@ -137,7 +137,7 @@ The `dk-edge-infrastructure` ApplicationSet's **matrix generator** (2 clusters x
 | PostgreSQL restore | Weekly | Automated job: backup → restore to test namespace → validate |
 | ArgoCD rebuild | Quarterly | Delete ArgoCD, re-bootstrap from `.gitops/repositories/` |
 | Sentinel failover | Monthly | Simulate network partition, verify sentinel-probe alerts |
-| Edge LB failover | Monthly | Stop one Traefik+Keepalived node, verify VIP migration |
+| Edge LB failover | Monthly | Stop one [Traefik](https://doc.traefik.io/traefik/)+Keepalived node, verify VIP migration |
 | Full cluster rebuild | Annually | Rebuild K3s from scratch, follow runbook |
 
 ## Gaps

@@ -2,7 +2,7 @@
 
 ## Overview
 
-All CI/CD runs on **GitHub Actions**. Each product repo owns its own build-deploy workflow; dk-alchemy has separate workflows for infrastructure validation, Grafana sync, and security scanning. The target state is a shared reusable workflow library that standardizes the build-deploy pattern across repos.
+All CI/CD runs on **[GitHub Actions](https://docs.github.com/en/actions)**. Each product repo owns its own build-deploy workflow; dk-alchemy has separate workflows for infrastructure validation, Grafana sync, and security scanning. The target state is a shared reusable workflow library that standardizes the build-deploy pattern across repos.
 
 ## Current Workflows
 
@@ -10,12 +10,12 @@ All CI/CD runs on **GitHub Actions**. Each product repo owns its own build-deplo
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| `argocd-sync-check.yaml` | Push | Validates ArgoCD sync status |
-| `kubeconform.yaml` | PR/Push | Validates Kubernetes manifests against schemas |
-| `kustomize-validate.yaml` | PR/Push | Runs `kustomize build` on all overlays |
+| `argocd-sync-check.yaml` | Push | Validates [ArgoCD](https://argo-cd.readthedocs.io/) sync status |
+| `kubeconform.yaml` | PR/Push | Validates [Kubernetes](https://kubernetes.io/docs/) manifests against schemas ([Kubeconform](https://github.com/yannh/kubeconform)) |
+| `kustomize-validate.yaml` | PR/Push | Runs [Kustomize](https://kubectl.docs.kubernetes.io/references/kustomize/) `build` on all overlays |
 | `yaml-lint.yaml` | PR/Push | YAML linting |
 | `security-scan.yaml` | PR/Push | Security scanning |
-| `grafana-dashboards.yaml` | Push to main | Syncs dashboards/alerts to Grafana |
+| `grafana-dashboards.yaml` | Push to main | Syncs dashboards/alerts to [Grafana](https://grafana.com/docs/grafana/latest/) |
 | `grafana-pr-preview.yaml` | PR | Validates dashboard JSON, posts preview |
 | `build-ddns.yaml` | Push | Builds ddns-service image |
 | `build-probe.yaml` | Push | Builds probe-service image |
@@ -26,14 +26,14 @@ Single workflow: `.github/workflows/build-deploy.yaml`
 
 **5 jobs:**
 
-1. **prepare** — extracts metadata (environment, Doppler config, tag prefix, SHA)
+1. **prepare** — extracts metadata (environment, [Doppler](https://docs.doppler.com/) config, tag prefix, SHA)
    - `main` / `v*` tags → `prod`
    - `staging` branch → `staging`
 
 2. **detect-changes** — `dorny/paths-filter` for smart change detection per app (api, app, admin, migrate) including dependent packages. Skipped on tag push.
 
-3. **build** — parallel Docker builds via matrix (4 images: api, app, admin, migrate)
-   - Registry: GHCR (`ghcr.io/data-kinetic/behavior-labs-ai/<app>`)
+3. **build** — parallel [Docker](https://docs.docker.com/) builds via matrix (4 images: api, app, admin, migrate)
+   - Registry: [GHCR](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry) (`ghcr.io/data-kinetic/behavior-labs-ai/<app>`)
    - Tags: `staging-<sha7>` for staging, `<version>` + `latest` for tags, `main-<sha7>` for main
    - Doppler CLI installed in Docker for build-time secret injection (`--mount=type=secret`)
    - SBOM and provenance attestations enabled
@@ -70,8 +70,20 @@ Doppler CLI is installed in Docker builds. Secrets are injected via `--mount=typ
 
 - **SBOM generation** enabled on Docker builds
 - **Provenance attestations** enabled
-- **Source map deletion** post-upload (Sentry, to be removed)
+- **Source map deletion** post-upload ([Sentry](https://docs.sentry.io/), to be removed)
 - **Image source restriction** — all images from `ghcr.io/data-kinetic/` (should be enforced via policy)
+
+### Security Scanning
+
+CI includes automated security checks:
+- **[Trivy](https://github.com/aquasecurity/trivy)** — vulnerability scanning for container images and IaC
+- **[Checkov](https://www.checkov.io/)** — policy-as-code checks for Kubernetes manifests and infrastructure
+
+### Grafana Dashboard Sync
+
+Two workflows automate dashboard management:
+- **`grafana-dashboards.yaml`** — syncs dashboard JSON files from `grafana/dashboards/` to the live Grafana instance via the Grafana API (uses Doppler for API keys)
+- **`grafana-pr-preview.yaml`** — validates dashboard JSON on PRs, ensuring dashboards parse correctly before merge
 
 ## Recommendations
 
@@ -118,7 +130,7 @@ Deploy **Renovate** (self-hosted on ARC runners) for automated dependency manage
 - **Docker base images** — auto-PR when base images have updates (e.g., `node:20-alpine`)
 - **npm dependencies** — group minor/patch updates into weekly PRs, pin majors for manual review
 - **GitHub Actions** — pin to commit SHA, auto-PR when new versions are available
-- **Helm charts** — track Helm chart versions in dk-alchemy kustomization files
+- **[Helm](https://helm.sh/docs/) charts** — track Helm chart versions in dk-alchemy kustomization files
 
 Renovate config (`renovate.json`) in each repo:
 ```json
@@ -143,11 +155,11 @@ Image tags **must be immutable** — never overwrite a tag that has been deploye
 | Production | `latest` | Yes | Acceptable for convenience but never used in kustomize overlays |
 | Main | `main-<sha7>` | No | Development builds |
 
-**Enforcement:** The [Standards Compliance](standards-compliance.md) Tier 1 checks reject `:latest` in production overlays. Kyverno admission policy provides in-cluster enforcement.
+**Enforcement:** The [Standards Compliance](standards-compliance.md) Tier 1 checks reject `:latest` in production overlays. [Kyverno](https://kyverno.io/docs/) admission policy provides in-cluster enforcement.
 
 ## Self-Hosted Runners (ARC v2)
 
-All CI/CD is migrating from GitHub-hosted runners to **self-hosted ephemeral runners** managed by Actions Runner Controller v2 on the K3s cluster. See [Self-Hosted Runners & Webhook Service](self-hosted-runners-and-webhooks.md) for full details on runner classes (standard/large/gpu), resource allocations, security, and migration path.
+All CI/CD is migrating from GitHub-hosted runners to **self-hosted ephemeral runners** managed by Actions Runner Controller v2 on the [K3s](https://docs.k3s.io/) cluster. See [Self-Hosted Runners & Webhook Service](self-hosted-runners-and-webhooks.md) for full details on runner classes (standard/large/gpu), resource allocations, security, and migration path.
 
 **Quick reference** — select runners via `runs-on`:
 
@@ -164,11 +176,11 @@ jobs:
 ### Build Caching
 
 - **Docker layers**: Registry-based cache via `--cache-from`/`--cache-to` on GHCR (`ghcr.io/<repo>/cache`)
-- **Turborepo**: Self-hosted remote cache on MinIO (`TURBO_API` → MinIO S3 endpoint)
+- **Turborepo**: Self-hosted remote cache on [MinIO](https://min.io/docs/minio/linux/index.html) (`TURBO_API` → MinIO S3 endpoint)
 
 ## Webhook-Driven Deployments
 
-The **webhook service** replaces per-repo CI kustomize commits. Instead of each repo's CI committing `newTag` changes to its own overlays, product repos send a webhook to `webhooks.datakinetic.com` after pushing an image. The webhook service handles the kustomize update, ArgoCD sync, Slack notification, and Grafana annotation centrally.
+The **webhook service** replaces per-repo CI kustomize commits. Instead of each repo's CI committing `newTag` changes to its own overlays, product repos send a webhook to `webhooks.datakinetic.com` after pushing an image. The webhook service handles the kustomize update, ArgoCD sync, [Slack](https://api.slack.com/) notification, and Grafana annotation centrally.
 
 See [Self-Hosted Runners & Webhook Service](self-hosted-runners-and-webhooks.md) for the full architecture and integration pattern.
 

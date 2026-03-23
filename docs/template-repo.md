@@ -100,7 +100,7 @@ _dk-alchemy-pr/
 
 ### Multi-Service Repos
 
-Pass `--service` multiple times to generate per-service directories under `k8s/apps/` and per-service ArgoCD Applications in `.gitops/`:
+Pass `--service` multiple times to generate per-service directories under `k8s/apps/` and per-service [ArgoCD](https://argo-cd.readthedocs.io/) Applications in `.gitops/`:
 
 ```bash
 ./scripts/init.sh --product carbon-5 --team data-platform \
@@ -112,14 +112,14 @@ Pass `--service` multiple times to generate per-service directories under `k8s/a
 | Generated File/Directory | Purpose | Reference |
 |--------------------------|---------|-----------|
 | `.gitops/` | ArgoCD Application manifests (root apps, per-service apps, AppProject) | [GitOps & CD](gitops-and-cd.md#product-repo-gitops-convention) |
-| `k8s/` | Kustomize base + overlay manifests per service | [GitOps & CD](gitops-and-cd.md#manifest-organization) |
-| `monitoring/dashboards/` | Placeholder Grafana dashboard JSON with correct UID/tag conventions | [Observability](observability.md#dashboard-contribution-quick-start) |
+| `k8s/` | [Kustomize](https://kubectl.docs.kubernetes.io/references/kustomize/) base + overlay manifests per service | [GitOps & CD](gitops-and-cd.md#manifest-organization) |
+| `monitoring/dashboards/` | Placeholder [Grafana](https://grafana.com/docs/grafana/latest/) dashboard JSON with correct UID/tag conventions | [Observability](observability.md#dashboard-contribution-quick-start) |
 | `monitoring/alerts/` | Placeholder alert YAML with required labels (`team`, `service`, `product`, `severity`) | [Observability](observability.md#dashboard-contribution-quick-start) |
 | `.github/workflows/build-deploy.yaml` | Build-deploy pipeline calling the shared reusable workflow | [CI/CD Pipelines](ci-cd-pipelines.md) |
 | `.github/workflows/standards.yaml` | Standards compliance check calling the shared reusable workflow | [Standards Compliance](standards-compliance.md) |
 | `.dk-standards.yaml` | Per-repo standards configuration (product, team, tiers) | [Standards Compliance](standards-compliance.md#per-repo-configuration) |
 | `renovate.json` | Dependency update automation extending org base config | [CI/CD Pipelines](ci-cd-pipelines.md#4-dependency-update-automation) |
-| `scripts/doppler/setup-doppler-dev.sh` | Local Doppler CLI setup following naming convention | [Secrets Management](secrets-management.md) |
+| `scripts/doppler/setup-doppler-dev.sh` | Local [Doppler](https://docs.doppler.com/) CLI setup following naming convention | [Secrets Management](secrets-management.md) |
 | `_dk-alchemy-pr/` | Pre-built dk-alchemy PR content (external app bootstraps, alert routing) | [Onboarding](onboarding.md#2-dk-alchemy-integration) |
 
 ## Post-Init Checklist
@@ -133,7 +133,7 @@ After running `init.sh`, complete the remaining manual steps from [Onboarding](o
 - [ ] Configure branch protection on `main` and `staging`
 - [ ] Add observability package and configure OTLP env vars ([Section 5](onboarding.md#5-observability))
 - [ ] Implement health check endpoints ([Section 6](onboarding.md#6-health-checks))
-- [ ] Set up PostHog if user-facing ([Section 7](onboarding.md#7-product-analytics-if-user-facing))
+- [ ] Set up [PostHog](https://posthog.com/docs) if user-facing ([Section 7](onboarding.md#7-product-analytics-if-user-facing))
 - [ ] Configure issue governance labels ([Section 8](onboarding.md#8-issue-governance))
 - [ ] Production hardening review ([Section 12](onboarding.md#12-production-hardening))
 
@@ -145,4 +145,4 @@ After running `init.sh`, complete the remaining manual steps from [Onboarding](o
 - [Standards Compliance](standards-compliance.md) — tiered CI/CD standards enforcement
 - [Observability](observability.md) — LGTM stack and self-service monitoring
 - [Secrets Management](secrets-management.md) — Doppler setup and naming conventions
-- [Application Instrumentation](application-instrumentation.md) — OTel SDK and health checks
+- [Application Instrumentation](application-instrumentation.md) — [OTel](https://opentelemetry.io/docs/) SDK and health checks

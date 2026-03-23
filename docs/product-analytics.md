@@ -2,7 +2,7 @@
 
 ## Overview
 
-**PostHog** handles user-facing product analytics and feature flags across Data Kinetic products. This is intentionally separate from infrastructure observability (Grafana/LGTM) — PostHog answers "what are users doing?" while the Grafana stack answers "is the system healthy?"
+**[PostHog](https://posthog.com/docs)** handles user-facing product analytics and feature flags across Data Kinetic products. This is intentionally separate from infrastructure observability ([Grafana](https://grafana.com/docs/grafana/latest/)/LGTM) — PostHog answers "what are users doing?" while the Grafana stack answers "is the system healthy?"
 
 PostHog is a good fit and should be retained. This document captures the current integration, conventions, and management best practices.
 
@@ -114,20 +114,20 @@ Keep these concerns **cleanly separated**:
 | Question | Tool | Why |
 |----------|------|-----|
 | "What features are users using?" | PostHog | Product-level, user-identified events |
-| "How many errors is the API throwing?" | Grafana (Mimir/Loki) | Infrastructure-level, system metrics |
+| "How many errors is the API throwing?" | Grafana ([Mimir](https://grafana.com/docs/mimir/latest/)/[Loki](https://grafana.com/docs/loki/latest/)) | Infrastructure-level, system metrics |
 | "Should we show this feature to org X?" | PostHog (feature flags) | User/org targeting |
 | "Is the API healthy?" | Grafana (probes, alerts) | System health |
 | "What's the conversion funnel?" | PostHog | User behavior analysis |
 | "What's the P95 latency?" | Grafana (Mimir) | Performance metrics |
 
-**Do not** use PostHog for system health monitoring or Grafana for user behavior analytics. The overlap zone (e.g., "feature usage dashboards" in Grafana) should source data from PostHog exports or OTel custom metrics, not duplicate instrumentation.
+**Do not** use PostHog for system health monitoring or Grafana for user behavior analytics. The overlap zone (e.g., "feature usage dashboards" in Grafana) should source data from PostHog exports or [OTel](https://opentelemetry.io/docs/) custom metrics, not duplicate instrumentation.
 
 ## Extending to Other Products
 
 When onboarding new product repos:
 
 1. Add `@repo/analytics` (or future `@datakinetic/analytics`) as a dependency
-2. Configure `NEXT_PUBLIC_POSTHOG_KEY` and `NEXT_PUBLIC_POSTHOG_HOST` in Doppler
+2. Configure `NEXT_PUBLIC_POSTHOG_KEY` and `NEXT_PUBLIC_POSTHOG_HOST` in [Doppler](https://docs.doppler.com/)
 3. Wrap app root in `AnalyticsProvider`
 4. Call `useIdentifyUser()` after authentication
 5. Define product-specific events following the `<domain>.<action>` naming convention

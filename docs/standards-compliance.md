@@ -2,7 +2,7 @@
 
 ## Overview
 
-A tiered CI/CD standards compliance system that enforces platform conventions across all product repos. Standards are defined in a shared YAML spec in `data-kinetic/.github`, enforced via a reusable GitHub Actions workflow, and consumed by both CI checks and the [PR Review Service](pr-review-service.md).
+A tiered CI/CD standards compliance system that enforces platform conventions across all product repos. Standards are defined in a shared YAML spec in `data-kinetic/.github`, enforced via a reusable [GitHub Actions](https://docs.github.com/en/actions) workflow, and consumed by both CI checks and the [PR Review Service](pr-review-service.md).
 
 ## Architecture
 
@@ -28,8 +28,8 @@ Required for all repos with a `k8s/` directory.
 
 | Check | Tool | Failure Mode |
 |-------|------|-------------|
-| Kubernetes schema validation | `kubeconform` | Error |
-| Kustomize build succeeds for all overlays | `kustomize build` | Error |
+| [Kubernetes](https://kubernetes.io/docs/) schema validation | [`kubeconform`](https://github.com/yannh/kubeconform) | Error |
+| [Kustomize](https://kubectl.docs.kubernetes.io/references/kustomize/) build succeeds for all overlays | `kustomize build` | Error |
 | YAML lint for `.gitops/` and `k8s/` | `yamllint` | Warning |
 | Required labels on Deployments | Custom check | Error |
 | No `:latest` tag in prod overlays | Custom check | Error |
@@ -59,7 +59,7 @@ Required for repos that have opted into Tier 3.
 
 | Check | Criteria | Failure Mode |
 |-------|----------|-------------|
-| SBOM generation enabled | `sbom: true` in Docker build step | Warning |
+| SBOM generation enabled | `sbom: true` in [Docker](https://docs.docker.com/) build step | Warning |
 | Provenance attestation enabled | `provenance: true` in Docker build step | Warning |
 | GitHub Action versions pinned to SHA | No `@v*` tags, only `@sha256:...` | Warning |
 | Webhook notification step present | `webhooks.datakinetic.com` call in build workflow | Error |
@@ -144,7 +144,7 @@ The doc-gap scanner in `dk-planning` uses the `documentation.yaml` standards def
 
 The PR critic's **Platform Standards** rubric is auto-generated from the same `standards/*.yaml` files. This ensures CI checks and PR reviews enforce identical rules. See [PR Review Service](pr-review-service.md#standards-rubric).
 
-### Kyverno (In-Cluster)
+### [Kyverno](https://kyverno.io/docs/) (In-Cluster)
 
 Many Tier 1 checks overlap with Kyverno admission policies (resource limits, image registries, required labels). The standards check provides shift-left enforcement in CI; Kyverno provides runtime enforcement. See [Security & Compliance](security-and-compliance.md#1-deploy-kyverno-admission-controller).
 
