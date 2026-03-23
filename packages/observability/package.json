@@ -1,0 +1,156 @@
+{
+  "name": "@datakinetic/observability",
+  "version": "0.1.0",
+  "description": "OpenTelemetry instrumentation, tracing, logging, and error handling for Data Kinetic services",
+  "type": "module",
+  "exports": {
+    "./instrumentation": {
+      "import": {
+        "types": "./dist/instrumentation.d.ts",
+        "default": "./dist/instrumentation.js"
+      },
+      "require": {
+        "types": "./dist/instrumentation.d.cts",
+        "default": "./dist/instrumentation.cjs"
+      }
+    },
+    "./tracing": {
+      "import": {
+        "types": "./dist/tracing.d.ts",
+        "default": "./dist/tracing.js"
+      },
+      "require": {
+        "types": "./dist/tracing.d.cts",
+        "default": "./dist/tracing.cjs"
+      }
+    },
+    "./log": {
+      "import": {
+        "types": "./dist/log.d.ts",
+        "default": "./dist/log.js"
+      },
+      "require": {
+        "types": "./dist/log.d.cts",
+        "default": "./dist/log.cjs"
+      }
+    },
+    "./structured-log": {
+      "import": {
+        "types": "./dist/structured-log.d.ts",
+        "default": "./dist/structured-log.js"
+      },
+      "require": {
+        "types": "./dist/structured-log.d.cts",
+        "default": "./dist/structured-log.cjs"
+      }
+    },
+    "./feedback": {
+      "import": {
+        "types": "./dist/feedback.d.ts",
+        "default": "./dist/feedback.js"
+      },
+      "require": {
+        "types": "./dist/feedback.d.cts",
+        "default": "./dist/feedback.cjs"
+      }
+    },
+    "./error": {
+      "import": {
+        "types": "./dist/error.d.ts",
+        "default": "./dist/error.js"
+      },
+      "require": {
+        "types": "./dist/error.d.cts",
+        "default": "./dist/error.cjs"
+      }
+    },
+    "./error-client": {
+      "import": {
+        "types": "./dist/error-client.d.ts",
+        "default": "./dist/error-client.js"
+      },
+      "require": {
+        "types": "./dist/error-client.d.cts",
+        "default": "./dist/error-client.cjs"
+      }
+    },
+    "./health": {
+      "import": {
+        "types": "./dist/health.d.ts",
+        "default": "./dist/health.js"
+      },
+      "require": {
+        "types": "./dist/health.d.cts",
+        "default": "./dist/health.cjs"
+      }
+    },
+    "./next-config": {
+      "import": {
+        "types": "./dist/next-config.d.ts",
+        "default": "./dist/next-config.js"
+      },
+      "require": {
+        "types": "./dist/next-config.d.cts",
+        "default": "./dist/next-config.cjs"
+      }
+    },
+    "./keys": {
+      "import": {
+        "types": "./dist/keys.d.ts",
+        "default": "./dist/keys.js"
+      },
+      "require": {
+        "types": "./dist/keys.d.cts",
+        "default": "./dist/keys.cjs"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist node_modules .turbo",
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false",
+    "lint": "eslint src/",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/api-logs": "^0.208.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.67.2",
+    "@opentelemetry/exporter-logs-otlp-http": "^0.208.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.208.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.208.0",
+    "@opentelemetry/resources": "^2.2.0",
+    "@opentelemetry/sdk-metrics": "^2.2.0",
+    "@opentelemetry/sdk-node": "^0.208.0",
+    "@opentelemetry/semantic-conventions": "^1.38.0",
+    "@t3-oss/env-core": "^0.13.10",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.0.0"
+  },
+  "peerDependencies": {
+    "next": ">=14.0.0"
+  },
+  "peerDependenciesMeta": {
+    "next": {
+      "optional": true
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/data-kinetic/dk-alchemy.git",
+    "directory": "packages/observability"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}

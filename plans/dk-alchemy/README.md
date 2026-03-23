@@ -18,6 +18,7 @@ These plans bridge the gap between the [dk-planning documentation](../../docs/) 
 | 08 | [Preview Standardization](08-preview-standardization.md) | Medium | Medium | Medium | 01 (API endpoints) |
 | 09 | [Governance Extraction](09-governance-extraction.md) | Medium | Medium | Medium | 01 (label endpoints) |
 | 10 | [Migrations](10-migrations.md) | High | Large | High | Target repo readiness |
+| 11 | [ArgoCD Onboarding Scaffolds](11-argocd-onboarding-scaffolds.md) | High | Small | High | 10 (unblocks migrations) |
 
 ## Dependency Graph
 

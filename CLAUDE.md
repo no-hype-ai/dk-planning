@@ -87,6 +87,22 @@ done
 - **Cross-reference.** When updating a doc that affects another repo, note the impact.
 - **Verify before claiming.** Use `gh repo view`, `gh issue list`, or read actual manifests before stating what exists.
 
+## Slash Commands
+
+| Command | Usage | Purpose |
+|---------|-------|---------|
+| `/dk-execute` | `/dk-execute` or `/dk-execute phase 1` | Orchestrate subagents to work through current phase issues across all repos. Reports to Slack, escalates blockers. |
+| `/dk-status` | `/dk-status` or `/dk-status 1` | Show milestone progress, P0 issues, blocked work, and phase gate status across all repos. |
+| `/dk-notify` | `/dk-notify "message"` or `/dk-notify dm blocker details` | Send coordination message to Slack (#dk-infrastructure or DM Nick King). |
+
+## Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/cross-repo-status.sh` | Dashboard view of milestones, P0s, blocked issues across repos |
+| `scripts/phase-gate.sh <N>` | Validate phase exit criteria (all issues closed?) |
+| `scripts/dk-notify.sh "msg"` | Webhook-based Slack notification fallback |
+
 ## Hooks
 
 When committing changes to docs/:
