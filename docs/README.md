@@ -26,6 +26,8 @@ Operational documentation for the Data Kinetic platform — a self-hosted [Kuber
 | [DK-OS](https://github.com/data-kinetic-projects/DK-OS) | Business operating system | Early — onboarding to K8s/ArgoCD. Absorbing dk-mercury + dk-phantom |
 | [lithium-5](https://github.com/data-kinetic/lithium-5) | Agentic support fabric — dynamic orchestration for DK-OS + other DK functions | Early — onboarding to K8s/ArgoCD |
 | [dk-compliance-v2](https://github.com/data-kinetic/dk-compliance-v2) | Compliance management platform | Pending onboarding |
+| [dk-clusters](https://github.com/data-kinetic/dk-clusters) | Proxmox cluster management — host configs, VM lifecycle, storage, networking, DR for penguin + krang | New |
+| [dk-template](https://github.com/data-kinetic/dk-template) | GitHub template for scaffolding new product repos | New (empty, planned) |
 
 ### Being Deprecated (services migrating out)
 
