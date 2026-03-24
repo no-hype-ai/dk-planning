@@ -667,6 +667,73 @@ Deployments are automated via ArgoCD:
 - `k8s/apps/doppler-secrets/overlays/staging/kustomization.yaml`
 - `README.md`
 
+## Step 5: Analytics Stub (PostHog Convention)
+
+> Added to establish the `<domain>.<action>` event naming convention from day one for new repos. See [product-analytics.md](../../docs/product-analytics.md).
+
+Scaffold a `packages/analytics/` directory with a minimal PostHog setup that bakes in the platform's event naming convention and environment-aware initialization:
+
+**`packages/analytics/index.ts`:**
+
+```typescript
+import posthog from 'posthog-js';
+
+const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY || '';
+const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com';
+
+export function initAnalytics() {
+  if (typeof window === 'undefined' || !POSTHOG_KEY) return;
+  posthog.init(POSTHOG_KEY, {
+    api_host: POSTHOG_HOST,
+    capture_pageview: false, // Manual page views for SPA
+    persistence: 'localStorage',
+  });
+}
+
+/**
+ * Track an event following the <domain>.<action> naming convention.
+ * Examples: "pipeline.created", "report.exported", "auth.login_succeeded"
+ */
+export function track(domain: string, action: string, properties?: Record<string, unknown>) {
+  posthog.capture(`${domain}.${action}`, {
+    product: '{{product}}',
+    ...properties,
+  });
+}
+
+export { posthog };
+```
+
+**`packages/analytics/README.md`:**
+
+```markdown
+# Analytics
+
+PostHog analytics for {{product}}. Uses the Data Kinetic `<domain>.<action>` event naming convention.
+
+## Usage
+
+\`\`\`typescript
+import { initAnalytics, track } from '@repo/analytics';
+
+// Initialize once at app startup
+initAnalytics();
+
+// Track events using <domain>.<action> format
+track('pipeline', 'created', { source_count: 5 });
+track('report', 'exported', { format: 'csv' });
+\`\`\`
+
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NEXT_PUBLIC_POSTHOG_KEY` | PostHog project API key | — |
+| `NEXT_PUBLIC_POSTHOG_HOST` | PostHog instance URL | `https://us.i.posthog.com` |
+```
+
+The init.sh script replaces `{{product}}` in this stub like all other template files. This ensures every new repo starts with the correct event naming convention without requiring a standalone analytics standardization plan.
+
 ## Verification
 
 - Clone dk-template, run `./scripts/init.sh --product test-app --team test-team --service api --service worker`

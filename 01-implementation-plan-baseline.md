@@ -1,13 +1,13 @@
 # Implementation Plan Baseline
 
-Master execution plan across all workstreams. Synthesized from 25 plans across 3 domains: [dk-alchemy](plans/dk-alchemy/), [dk-clusters](plans/dk-clusters/), [dk-template](plans/dk-template/).
+Master execution plan across all workstreams. Synthesized from 27 plans across 3 domains: [dk-alchemy](plans/dk-alchemy/), [dk-clusters](plans/dk-clusters/), [dk-template](plans/dk-template/).
 
 ## Workstream Summary
 
 | Workstream | Repo | Plans | Focus |
 |-----------|------|-------|-------|
-| [dk-clusters](plans/dk-clusters/) | [data-kinetic/dk-clusters](https://github.com/data-kinetic/dk-clusters) | 6 | Proxmox hosts, K3s HA, storage, networking, DR |
-| [dk-alchemy](plans/dk-alchemy/) | [data-kinetic/dk-alchemy](https://github.com/data-kinetic/dk-alchemy) | 10 | Platform API, observability, security, CI/CD, migrations |
+| [dk-clusters](plans/dk-clusters/) | [data-kinetic/dk-clusters](https://github.com/data-kinetic/dk-clusters) | 7 | Proxmox hosts, K3s HA, storage, networking, DR, host monitoring |
+| [dk-alchemy](plans/dk-alchemy/) | [data-kinetic/dk-alchemy](https://github.com/data-kinetic/dk-alchemy) | 14 | Platform API, observability, security, CI/CD, migrations, cost visibility |
 | [dk-template](plans/dk-template/) | [data-kinetic/dk-template](https://github.com/data-kinetic/dk-template) | 6 | Repo scaffolding, CI/CD standards, dk-cli integration |
 
 ---
@@ -52,6 +52,7 @@ Master execution plan across all workstreams. Synthesized from 25 plans across 3
 |---|------|------|--------|----------|
 | 1.5 | HA cluster (workload distribution, anti-affinity, CNPG standby) | [dk-clusters/02](plans/dk-clusters/02-ha-and-resilience.md) | Large | **Partial** — pods redistributed 55/45, CNPG standby pending. Backup & DR (03) |
 | 1.6 | Storage optimization (vmfast migration, capacity alerting) | [dk-clusters/05](plans/dk-clusters/05-storage-optimization.md) | Medium | **Largely complete** — nvfast at 9%, PVC placement verified. Capacity dashboard pending. |
+| 1.7 | Proxmox host & GPU monitoring (node_exporter, pve-exporter, DCGM) | [dk-clusters/07](plans/dk-clusters/07-proxmox-monitoring.md) | Medium | VM right-sizing (06), cost dashboards (dk-alchemy/13) |
 
 ### Phase 1 Exit Criteria
 - [ ] Platform API responds at dk.datakinetic.com/health
@@ -62,6 +63,8 @@ Master execution plan across all workstreams. Synthesized from 25 plans across 3
 - [ ] `npm install @datakinetic/observability` succeeds
 - [x] Production pods distributed across penguin and krang *(55%/45% after rolling restarts, Mar 2026)*
 - [ ] Grafana storage dashboard with capacity alerts
+- [ ] Proxmox host metrics visible in Grafana (CPU, RAM, disk, ZFS for penguin + krang)
+- [ ] GPU utilization dashboard shows 8x A100 metrics from krang
 
 ---
 
@@ -78,6 +81,7 @@ Master execution plan across all workstreams. Synthesized from 25 plans across 3
 | 2.3 | Secrets rotation schedules + expiry alerting | [dk-alchemy/07](plans/dk-alchemy/07-secrets-lifecycle.md) | Small | 1.2 SLO/incident done |
 | 2.4 | Preview standardization (dk preview commands) | [dk-alchemy/08](plans/dk-alchemy/08-preview-standardization.md) | Medium | 1.1 Platform API done |
 | 2.5 | Issue governance extraction (org-wide workflows) | [dk-alchemy/09](plans/dk-alchemy/09-governance-extraction.md) | Medium | 1.1 Platform API done |
+| 2.6a | Cost & utilization dashboards (LLM, K8s, GPU) | [dk-alchemy/13](plans/dk-alchemy/13-cost-and-utilization.md) | Small | Phases 1-2: None. Phase 3: 1.7 Proxmox monitoring |
 
 ### 2B: Infrastructure DR (dk-clusters)
 
@@ -106,6 +110,8 @@ Master execution plan across all workstreams. Synthesized from 25 plans across 3
 - [ ] Off-site backups < 4 hours old in S3
 - [ ] `./scripts/init.sh --product test --team test --service api` generates complete scaffold
 - [ ] dk-template generates valid dk-alchemy PR content
+- [ ] LLM cost dashboard shows per-app spend and cache efficiency
+- [ ] K8s resource efficiency dashboard identifies overprovisioned pods
 
 ---
 
@@ -145,6 +151,8 @@ Lower-priority items from individual plans, to be scheduled as capacity allows:
 | Grafana Faro (frontend RUM) | [docs/application-instrumentation.md](docs/application-instrumentation.md) | Low |
 | Doc-gap scanner automation | [dk-alchemy/09](plans/dk-alchemy/09-governance-extraction.md) | Medium |
 | Renovate for automated dependency updates | [dk-alchemy/04](plans/dk-alchemy/04-cicd-modernization.md) | Medium |
+| Proxmox IaC (Terraform/Ansible for VM provisioning) | — | Low (revisit when VM count > 15 or third host added) |
+| Product analytics standardization (`@datakinetic/analytics`) | — | Low (revisit after carbon-5/lithium-5 onboarded) |
 
 ---
 
@@ -162,6 +170,7 @@ PHASE 1 (Weeks 3-6)                                            │     │
   dk-alchemy/06 Observability Pkg ─────┤   │   │               │     │
   dk-clusters/02 HA & Resilience ──┐   │   │   │  ◄────────────┘─────┘
   dk-clusters/05 Storage Opt ──┐   │   │   │   │
+  dk-clusters/07 Proxmox Mon ─┤   │   │   │   │  ◄────────────┘
                                │   │   │   │   │
 PHASE 2 (Weeks 7-12)          │   │   │   │   │
   dk-alchemy/03 Security ◄────┘───┘   │   │   │
@@ -169,8 +178,10 @@ PHASE 2 (Weeks 7-12)          │   │   │   │   │
   dk-alchemy/07 Secrets ◄─────────────────┘   │
   dk-alchemy/08 Previews ◄────────────────────┘
   dk-alchemy/09 Governance ◄───────────────────┘
+  dk-alchemy/13 Cost (Phases 1-2) ──(independent, uses existing metrics)
   dk-clusters/03 Backup & DR ◄─┘
   dk-clusters/04 Network ────────(independent)
+  dk-alchemy/13 Cost Phase 3 ◄──── dk-clusters/07 (GPU + VM metrics)
   dk-template/01-05 Scaffold ────(requires Phase 1 stable)
                                │
 PHASE 3 (Weeks 13-16)         │
@@ -205,3 +216,5 @@ PHASE 3 (Weeks 13-16)         │
 | Sentry migration loses alert coverage | Errors go undetected | Phase 1 parallel run validates parity before SDK removal |
 | Migration data loss | Service degradation | Full backup before each migration, staging validation, rollback plan |
 | dk-template init.sh platform incompatibility | macOS vs Linux sed differences | Test on both platforms, use perl -i for portable in-place editing |
+| Proxmox host failure undetected | Production cluster down, no advance warning | dk-clusters/07 monitoring with host, VM, and GPU alerts |
+| GPU fleet idle cost untracked | 8x A100s burning power with no utilization visibility | dk-alchemy/13 cost dashboard + GPU idle alerts from dk-clusters/07 |

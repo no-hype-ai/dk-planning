@@ -2,7 +2,7 @@
 
 ## Overview
 
-These plans bridge the gap between the [dk-planning documentation](../../docs/) (target state) and the current dk-alchemy implementation. They organize 74 identified gaps into 12 actionable workstreams with clear sequencing, dependencies, and priorities.
+These plans bridge the gap between the [dk-planning documentation](../../docs/) (target state) and the current dk-alchemy implementation. They organize identified gaps into 13 actionable workstreams with clear sequencing, dependencies, and priorities.
 
 ## Priority Matrix
 
@@ -22,6 +22,7 @@ These plans bridge the gap between the [dk-planning documentation](../../docs/) 
 | 10 | [Migrations](10-migrations.md) | Not Started | All phases (**has mandatory safety gates**) | Target repo readiness (11) |
 | 11 | [ArgoCD Onboarding Scaffolds](11-argocd-onboarding-scaffolds.md) | Not Started | Regenerate scaffolds, submit PRs | 10 (unblocks migrations) |
 | 12 | [dk-cli PRD](12-dk-cli-prd.md) | Not Started | All phases | 01 (Platform API), 08 (Preview) |
+| 13 | [Cost & Utilization](13-cost-and-utilization.md) | Not Started | LLM cost dashboard, K8s efficiency, unified cost view | Phases 1-2: None. Phase 3: dk-clusters/07 |
 
 ## Dependency Graph
 
@@ -37,10 +38,14 @@ Unblocked (can start now — foundation partially in place):
   03-Security Hardening (Kyverno enforce phases, NetworkPolicies, cosign)
   07-Secrets Lifecycle (Alloy Doppler pipeline — blocking for alert activation)
 
+Unblocked (independent):
+  13-Cost & Utilization (Phases 1-2 use existing LiteLLM + K8s metrics)
+
 Still blocked:
   08, 09 ◄── Platform API needs to be fully deployed + routed (not just scaffolded)
   10 ◄────── 11 (scaffolds for target repos) — ⚠️ has mandatory safety gates
   12 ◄────── 01 + 08 (Platform API + Preview standardization)
+  13 Phase 3 ◄── dk-clusters/07 (GPU + VM metrics from Proxmox monitoring)
 ```
 
 ## Recommended Execution Phases (updated 2026-03-23)
@@ -58,6 +63,7 @@ With foundation work partially in place, these can begin:
 - **05 Sentry Migration** — dk-alchemy artifacts done, Sentry SDK removal in behavior-labs-ai can proceed
 - **07 Secrets Lifecycle** — Alerts + runbook done, **Alloy Doppler pipeline is the critical blocker** to activate alerts
 - **08 Preview Standardization** — Blocked until Platform API preview endpoints are fully deployed
+- **13 Cost & Utilization** — Phases 1-2 unblocked (LLM + K8s metrics exist). Phase 3 after dk-clusters/07 ships.
 
 ### Phase 3: Extended (Months 3-6)
 - **09 Governance Extraction** — after Platform API label endpoints are live
