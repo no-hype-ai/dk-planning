@@ -16,7 +16,7 @@ This document covers backup strategy, recovery procedures, and multi-cluster rea
 | **Secrets** | Recoverable via [Doppler](https://docs.doppler.com/) | Doppler Operator re-syncs from SaaS on pod restart |
 | **sentinel-probe** | External monitoring | AWS EC2 + WireGuard; detects outages from outside |
 | **DR scripts** | Partial | `scripts/sentinel/` has provisioning and WireGuard setup |
-| **[PostgreSQL](https://www.postgresql.org/docs/)** | CloudNativePG | Has backup capabilities but backup schedule/target not documented here |
+| **[PostgreSQL](https://www.postgresql.org/docs/)** | CloudNativePG | 3-instance cluster operational. Backup schedule not yet configured — pending [dk-clusters Plan 03](../plans/dk-clusters/03-backup-and-dr.md) Phase 1 (CNPG scheduled backups to MinIO/S3) |
 | **[MinIO](https://min.io/docs/minio/linux/index.html)** | Distributed mode | Data replication within cluster |
 | **Observability data** | Not backed up | [Loki](https://grafana.com/docs/loki/latest/)/[Mimir](https://grafana.com/docs/mimir/latest/)/[Tempo](https://grafana.com/docs/tempo/latest/) on local-path-bulk; loss = loss of 30 days of metrics/logs/traces |
 
@@ -142,8 +142,10 @@ The `dk-edge-infrastructure` ApplicationSet's **matrix generator** (2 clusters x
 
 ## Gaps
 
+- **No PostgreSQL backups configured** — CNPG has backup capability but no scheduled backup or WAL archiving target is configured. Data loss risk is unbounded until this is addressed.
 - **No automated backup verification** — backups may exist but are never tested
-- **No multi-cluster capability** — single cluster, single point of failure
+- **PVC locality constrains DR** — all PVCs are node-local (local-path provisioner). Draining k3s-master-1 causes downtime for stateful services. CNPG standby replicas on krang would mitigate for PostgreSQL.
+- **No multi-cluster capability** — 2-node cluster operational (penguin + krang) but no cross-cluster failover
 - **Observability data not backed up** — acceptable and documented as a conscious decision
 - **OpenSearch snapshot automation** — snapshot repository plugin not yet configured
 - **MinIO off-cluster mirror** — `mc mirror` schedule not yet implemented

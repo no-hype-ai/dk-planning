@@ -8,7 +8,7 @@ All shared infrastructure is managed in [dk-alchemy](https://github.com/data-kin
 
 | Component | Technology | Details |
 |-----------|-----------|---------|
-| **[PostgreSQL](https://www.postgresql.org/docs/)** | CloudNativePG (PG 16.4) | Extensions: uuid-ossp, pg_trgm, vector, age. Custom image `ghcr.io/data-kinetic/dk-alchemy/postgres-cnpg:latest`. 50Gi on `local-path-fast` (NVMe) |
+| **[PostgreSQL](https://www.postgresql.org/docs/)** | CloudNativePG (PG 16.4) | 3-instance cluster with pod anti-affinity (`topology.kubernetes.io/zone`). Extensions: uuid-ossp, pg_trgm, vector, age. Custom image `ghcr.io/data-kinetic/dk-alchemy/postgres-cnpg:latest`. 50Gi on `local-path-fast` (NVMe). Backups not yet configured. |
 | **[Redis](https://redis.io/docs/)** | Redis 7 (Alpine) | Single StatefulSet, AOF persistence, LRU eviction (256MB max), 10Gi on `local-path-fast` |
 | **[MinIO](https://min.io/docs/minio/linux/index.html)** | MinIO (single-replica) | Object storage for assets and backups, version RELEASE.2024-01-18, 10Gi PVC |
 | **[OpenSearch](https://opensearch.org/docs/latest/)** | OpenSearch | Full-text search, log analytics |
@@ -114,6 +114,7 @@ Full list of infrastructure components managed via `dk-infrastructure` Applicati
 
 ## Gaps
 
+- **Node-local storage constrains HA** — `local-path` provisioner means PVCs on k3s-master-1 cannot be accessed from k3s-slave-1. Draining k3s-master-1 causes downtime for all stateful services bound to that node. This is the primary HA constraint. CNPG standby replicas on krang would mitigate for PostgreSQL.
 - **Edge LB scaling is manual** — adding a third node requires new Keepalived overlays and matrix generator updates
 - **Single-replica observability backends** — Loki, Mimir, Tempo each run as a single replica; acceptable for current scale but a risk for availability
 - **No automated capacity planning** — storage usage alerts exist but no proactive scaling

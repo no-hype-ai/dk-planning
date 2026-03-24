@@ -14,15 +14,15 @@ This directory contains prioritized plans to align the current state with dk-pla
 - **RAM:** 995 GiB
 - **Role:** K3s master, shared services, edge LB (phantom)
 - **VMs:** k3s-master-1 (200), litellm (100), preview-stack (101), dk-shared-services (102), phantom (210)
-- **Storage:** vmfast NVMe (92.3% CRITICAL), local-lvm (7.6%), bulk-images 24TB (0.5%)
+- **Storage:** nvfast NVMe (9% healthy), local-lvm (7.6%), bulk-images 24TB (0.5%)
 
 ### krang (Node 2 — GPU/Compute)
 - **IP:** 192.168.10.100
 - **CPU:** AMD EPYC 7763 × 2 (128C/256T)
 - **RAM:** 1 TiB
 - **GPUs:** 8× NVIDIA A100
-- **Role:** K3s worker (pending join #292), edge LB (venom), GPU inference
-- **VMs:** k3s-slave-1 (201, NOT JOINED), venom (211), vllm-minimax (220, 8× A100)
+- **Role:** K3s worker, edge LB (venom), GPU inference
+- **VMs:** k3s-slave-1 (201, JOINED), venom (211), vllm-minimax (220, 8× A100)
 - **Storage:** local-lvm, bulk-images, nvfast (NVMe), models (2TB ZFS zvol)
 
 ### Quorum
@@ -31,13 +31,13 @@ This directory contains prioritized plans to align the current state with dk-pla
 
 ## Priority Matrix
 
-| # | Plan | Priority | Impact | Urgency | Issues |
-|---|------|----------|--------|---------|--------|
-| 01 | [Critical Fixes](01-critical-fixes.md) | P0 | Critical | This week | #290, #292, #295, vmfast |
-| 02 | [HA & Resilience](02-ha-and-resilience.md) | P1 | Critical | This sprint | #292, spec-013 |
-| 03 | [Backup & DR](03-backup-and-dr.md) | P1 | High | This month | #239, #243, spec-014 |
-| 04 | [Network & Edge](04-network-and-edge.md) | P2 | Medium | Next sprint | #294, #251, spec-009 |
-| 05 | [Storage Optimization](05-storage-optimization.md) | P1 | High | This sprint | vmfast 92.3%, spec-007 |
+| # | Plan | Priority | Impact | Status | Issues |
+|---|------|----------|--------|--------|--------|
+| 01 | [Critical Fixes](01-critical-fixes.md) | P0 | Critical | **COMPLETE** | #290, #292, #295, vmfast — all resolved |
+| 02 | [HA & Resilience](02-ha-and-resilience.md) | P1 | Critical | In progress — nodes joined, zone labels applied, workload redistribution pending | #292 closed, spec-013 |
+| 03 | [Backup & DR](03-backup-and-dr.md) | P1 | High | Pending — no CNPG backups configured | #239, #243, spec-014 |
+| 04 | [Network & Edge](04-network-and-edge.md) | P2 | Medium | Partial — edge failover verified (Mar 2026), VRRP monitoring pending | #294, #251, spec-009 |
+| 05 | [Storage Optimization](05-storage-optimization.md) | P1 | High | **COMPLETE** — nvfast at 9%, PVC placement correct (staging MinIO storage class TBD) | spec-007 |
 | 06 | [VM Lifecycle](06-vm-lifecycle.md) | P3 | Low | Backlog | spec-013 |
 
 ## Dependency Graph
@@ -54,7 +54,7 @@ This directory contains prioritized plans to align the current state with dk-pla
 
 ## Key Decision
 
-**K3s cluster expansion:** Fix krang join first (#292) to get 2-node HA across physical hosts. Scarecrow added later as third node. No new K3s nodes on same host (same-host HA provides no hardware redundancy).
+**K3s cluster expansion:** krang joined (#292 closed) — 2-node HA across physical hosts operational. Zone labels applied (`topology.kubernetes.io/zone`). Workload redistribution pending rolling restarts. Scarecrow planned as third node. No new K3s nodes on same host (same-host HA provides no hardware redundancy).
 
 ## dk-clusters Repository Structure
 
@@ -94,16 +94,16 @@ dk-clusters/
 
 ## Alignment with dk-planning Docs
 
-| dk-planning Doc | Gap | Plan |
-|----------------|-----|------|
-| infrastructure.md | Single-node cluster, no HA | 02 |
-| infrastructure.md | vmfast at 92.3% | 01, 05 |
-| observability.md | Alloy namespace gap | 01 |
-| disaster-recovery.md | No backup testing | 03 |
-| disaster-recovery.md | No off-site replication | 03 |
-| disaster-recovery.md | No sentinel probe | 03 |
-| infrastructure.md | Edge LB venom status | 04 |
-| platform-overview.md | VM naming inconsistent | 06 |
+| dk-planning Doc | Gap | Plan | Status |
+|----------------|-----|------|--------|
+| infrastructure.md | Single-node cluster, no HA | 02 | **RESOLVED** — 2-node cluster, zone labels applied |
+| infrastructure.md | vmfast at 92.3% | 01, 05 | **RESOLVED** — nvfast at 9% |
+| observability.md | Alloy namespace gap | 01 | **RESOLVED** — scraping all namespaces |
+| disaster-recovery.md | No backup testing | 03 | Open — CNPG backups not yet configured |
+| disaster-recovery.md | No off-site replication | 03 | Open — mc mirror not configured |
+| disaster-recovery.md | No sentinel probe | 03 | Open — SSH blocker |
+| infrastructure.md | Edge LB venom status | 04 | **RESOLVED** — edge failover verified Mar 2026 |
+| platform-overview.md | VM naming inconsistent | 06 | Open — backlog |
 
 ## Alignment with dk-alchemy Specs
 

@@ -46,15 +46,15 @@ Data Kinetic runs a self-hosted [Kubernetes](https://kubernetes.io/docs/) platfo
 
 ### K3s Clusters
 
-- **Main cluster** — runs on penguin/krang, hosts all workloads
-- **Edge LB nodes** — 2 dedicated VMs (phantom at 10.0.0.2, venom at 10.0.0.3) running [Traefik](https://doc.traefik.io/traefik/) + [Keepalived](https://www.keepalived.org/manpage.html) for VIP failover
+- **Main cluster** — 2-node cluster: k3s-master-1 (penguin, control-plane) + k3s-slave-1 (krang, agent). Zone labels applied (`topology.kubernetes.io/zone=penguin` / `=krang`) for topology-aware scheduling. K3s v1.33.6+k3s1.
+- **Edge LB nodes** — 2 dedicated VMs (phantom at 10.0.0.2, venom at 10.0.0.3) running [Traefik](https://doc.traefik.io/traefik/) + [Keepalived](https://www.keepalived.org/manpage.html) for VIP failover. VRRP failover verified operational (Mar 2026), all 8 TLS certificates Ready, 28 ingress routes active.
 
 ### Standalone VMs (penguin-hosted)
 
 | VM | IP | Resources | Role |
 |----|-----|-----------|------|
 | vm100-litellm | 192.168.10.50 | 16 vCPU, 64GB RAM | [LiteLLM](litellm.md) proxy — LLM gateway for all products |
-| vm101-preview-stack | 10.0.0.51 | 32 vCPU, 128GB RAM | [Preview environments](preview-environments.md) — docker-compose previews via NPM |
+| vm101-preview-stack | 10.0.0.51 | 16 vCPU, 125 GiB RAM, 485 GB disk | [Preview environments](preview-environments.md) — docker-compose previews via NPM |
 | vm220-vllm | 192.168.10.101 | GPU passthrough | vLLM model serving (not HA) |
 
 ### VIPs (Keepalived)

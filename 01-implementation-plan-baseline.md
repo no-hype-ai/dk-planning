@@ -26,10 +26,10 @@ Master execution plan across all workstreams. Synthesized from 25 plans across 3
 **Parallel quick-start:** Begin [dk-alchemy/06 Shared Observability Package](plans/dk-alchemy/06-shared-observability-package.md) — small effort, no infrastructure dependency, unblocks Sentry migration later.
 
 ### Phase 0 Exit Criteria
-- [ ] Reflector Running, secrets propagated to app namespaces
-- [ ] Grafana application dashboards show metrics from all namespaces
-- [ ] `zpool list vmfast` < 85%
-- [ ] `kubectl get nodes` shows 2 nodes Ready (k3s-master-1 + k3s-slave-1)
+- [x] Reflector Running, secrets propagated to app namespaces *(resolved Mar 2026)*
+- [x] Grafana application dashboards show metrics from all namespaces *(Alloy scraping all namespaces)*
+- [x] `zpool list vmfast` < 85% *(nvfast at 9%)*
+- [x] `kubectl get nodes` shows 2 nodes Ready (k3s-master-1 + k3s-slave-1) *(joined, zone labels applied)*
 
 ---
 
@@ -51,7 +51,7 @@ Master execution plan across all workstreams. Synthesized from 25 plans across 3
 | # | Task | Plan | Effort | Unblocks |
 |---|------|------|--------|----------|
 | 1.5 | HA cluster (workload distribution, anti-affinity, CNPG standby) | [dk-clusters/02](plans/dk-clusters/02-ha-and-resilience.md) | Large | Backup & DR (03) |
-| 1.6 | Storage optimization (vmfast migration, capacity alerting) | [dk-clusters/05](plans/dk-clusters/05-storage-optimization.md) | Medium | Long-term storage health |
+| 1.6 | Storage optimization (vmfast migration, capacity alerting) | [dk-clusters/05](plans/dk-clusters/05-storage-optimization.md) | Medium | **Largely complete** — nvfast at 9%, PVC placement verified. Capacity dashboard pending. |
 
 ### Phase 1 Exit Criteria
 - [ ] Platform API responds at dk.datakinetic.com/health
@@ -198,8 +198,8 @@ PHASE 3 (Weeks 13-16)         │
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| vmfast fills completely before Phase 0 fix | Production K3s fails | Immediate snapshot cleanup + thin provisioning check |
-| krang join blocked by network routing | No HA, single point of failure | Verify iptables forwarding rules before attempting join |
+| ~~vmfast fills completely before Phase 0 fix~~ | ~~Production K3s fails~~ | **MITIGATED** — nvfast at 9% after quota enforcement + cleanup |
+| ~~krang join blocked by network routing~~ | ~~No HA, single point of failure~~ | **MITIGATED** — k3s-slave-1 joined, 2 nodes Ready, zone labels applied |
 | Shared workflow adoption breaks existing CI | Product repo builds fail | Roll out to dk-alchemy first, then behavior-labs-ai with grace period |
 | Platform API scope creep | Delays Phase 1 | Build LLM + webhook endpoints first, add previews + labels in Phase 2 |
 | Sentry migration loses alert coverage | Errors go undetected | Phase 1 parallel run validates parity before SDK removal |
