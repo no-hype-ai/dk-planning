@@ -1,5 +1,7 @@
 # dk-alchemy PR Content Generation
 
+**Status:** Complete
+
 ## Context
 When a new product repo is created from dk-template, it needs to be registered with dk-alchemy (ArgoCD bootstrap, Grafana alert routing). Rather than making teams write these files manually, dk-template generates them in a `_dk-alchemy-pr/` directory ready to be submitted as a PR.
 

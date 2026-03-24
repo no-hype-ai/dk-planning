@@ -1,5 +1,7 @@
 # CI/CD Workflows & Standards Configuration
 
+**Status:** Complete
+
 ## Context
 
 Every product repo needs CI/CD workflows for building, deploying, and validating. Rather than maintaining pipeline logic in each repo, dk-template generates thin wrappers that call shared reusable workflows from `data-kinetic/.github`. Standards compliance configuration is also generated.

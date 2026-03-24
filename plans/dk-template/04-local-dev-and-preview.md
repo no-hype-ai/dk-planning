@@ -1,5 +1,7 @@
 # Local Development & Preview Environment Support
 
+**Status:** Complete
+
 ## Context
 Product repos need local development environments and VM-based preview deployments. dk-template generates docker-compose configs for both, plus Doppler setup scripts. Local dev uses `.gitops/local/apps/`, previews use `docker-compose.preview.yaml` at the root.
 

@@ -6,7 +6,13 @@ Preview environments allow product repos to deploy branch-based previews accessi
 
 ## Current State
 
-Preview deployments currently run on VM101 (preview-stack) via Nginx Proxy Manager (NPM) with ad-hoc docker-compose projects. This is functional but fragmented — no standard pattern, manual SSH deployment, and no automated cleanup.
+Preview deployments currently run on VM101 (preview-stack) via Nginx Proxy Manager (NPM) with ad-hoc docker-compose projects. As of 2026-03-23, VM101 hosts 15 Docker Compose projects with 63 containers. Ubuntu 22.04.5 LTS running Docker 29.2.1.
+
+**Operational improvements completed (Phase 0):**
+- UFW firewall is active (deny-by-default incoming)
+- Automated cleanup cron jobs installed (hourly TTL, weekly Docker prune, daily archive cleanup)
+- Health endpoint available at port 9100
+- Disk usage reduced to 59% (282 GB / 485 GB)
 
 ### Infrastructure
 
@@ -15,7 +21,7 @@ Preview deployments currently run on VM101 (preview-stack) via Nginx Proxy Manag
 | **VM** | vm101-preview-stack (penguin, VMID 101) |
 | **Cluster IP** | 10.0.0.51 (vmbr1, isolated) |
 | **DMZ IP** | 172.16.100.51 (vmbr2, for edge routing) |
-| **Resources** | 32 vCPU, 128 GiB RAM, 500 GB disk |
+| **Resources** | 16 vCPU, 125 GiB RAM, 485 GB disk |
 | **Reverse proxy** | Nginx Proxy Manager (port 80) |
 
 ### Domains

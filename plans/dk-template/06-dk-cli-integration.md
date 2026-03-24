@@ -1,5 +1,7 @@
 # dk-cli Integration: `dk init` Command
 
+**Status:** Complete
+
 ## Context
 The `dk init` command is the primary interface for creating new product repos. It wraps dk-template — cloning, running init.sh, and guiding the developer through next steps. This plan describes the dk-cli side of the integration.
 

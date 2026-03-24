@@ -4,19 +4,20 @@
 
 [`dk-template`](https://github.com/data-kinetic/dk-template) is the GitHub template repository for scaffolding new Data Kinetic product repos. When a developer runs `dk init` or clicks "Use this template", they get a complete, production-ready project structure with GitOps, Kubernetes manifests, CI/CD, monitoring, local development, and dk-alchemy integration — all pre-configured.
 
-**Current state:** Repository exists but is empty.
-**Target state:** 30+ template files + init.sh script that generates a fully functional product repo.
+## Status: All Plans Complete
+
+All 6 implementation plans have been executed and the dk-template repository is fully scaffolded.
 
 ## Plans
 
-| # | Plan | What it Creates | Effort |
-|---|------|-----------------|--------|
-| 01 | [Core Scaffold](01-core-scaffold.md) | init.sh, .gitops/, k8s/, README template | Large |
-| 02 | [CI/CD & Standards](02-cicd-and-standards.md) | GitHub Actions workflows, .dk-standards.yaml, renovate.json, CODEOWNERS | Small |
-| 03 | [Observability](03-observability.md) | Dashboard JSON, alert YAML, instrumentation placeholder | Medium |
-| 04 | [Local Dev & Preview](04-local-dev-and-preview.md) | docker-compose (local + preview), Doppler setup script | Small |
-| 05 | [dk-alchemy PR Gen](05-dk-alchemy-pr-gen.md) | Bootstrap YAML, Grafana routing additions, PR instructions | Small |
-| 06 | [dk-cli Integration](06-dk-cli-integration.md) | `dk init` command implementation | Medium |
+| # | Plan | Status | Purpose |
+|---|------|--------|---------|
+| 01 | [Core Scaffold](01-core-scaffold.md) | Complete | init.sh, GitOps manifests, K8s deployment/service |
+| 02 | [CI/CD & Standards](02-cicd-and-standards.md) | Complete | GitHub Actions workflows, .dk-standards.yaml, renovate.json |
+| 03 | [Observability](03-observability.md) | Complete | Grafana dashboards, alert rules, OTel instrumentation |
+| 04 | [Local Dev & Preview](04-local-dev-and-preview.md) | Complete | docker-compose (local + preview), Doppler setup |
+| 05 | [dk-alchemy PR Gen](05-dk-alchemy-pr-gen.md) | Complete | Bootstrap YAML, contact points, notification policies |
+| 06 | [dk-cli Integration](06-dk-cli-integration.md) | Complete | `dk init` reference implementation |
 
 ## Execution Order
 
@@ -30,6 +31,14 @@
 ```
 
 Plans 02-05 can be executed in parallel after Plan 01. Plan 06 requires all others complete.
+
+## Recent Additions
+
+- **Claude Code skills** added to `.claude/commands/`:
+  - `/dk-preview` — Preview environment management
+  - `/dk-api` — Platform API interaction
+  - `/dk-standards` — Standards compliance checks
+  - `/dk-onboard` — Interactive onboarding checklist
 
 ## Generated File Inventory
 
@@ -88,6 +97,11 @@ carbon-5/
 │   │   └── carbon-5-bootstrap.yaml
 │   ├── contact-points-addition.yaml
 │   └── notification-policies-addition.yaml
+├── .claude/commands/
+│   ├── dk-preview.md
+│   ├── dk-api.md
+│   ├── dk-standards.md
+│   └── dk-onboard.md
 ├── docker-compose.preview.yaml
 ├── scripts/doppler/
 │   └── setup-doppler-dev.sh
@@ -113,6 +127,12 @@ After scaffolding, teams complete these steps (or use `dk onboard`):
 10. [ ] Production hardening review
 
 See [Onboarding Checklist](../../docs/onboarding.md) for the complete guide.
+
+## Dependencies
+
+- [dk-alchemy plans](../dk-alchemy/) — Kustomize components, shared workflows, Platform API
+- [dk-cli PRD](../dk-alchemy/12-dk-cli-prd.md) — CLI that consumes the template
+- [dk-preview-stack](../dk-preview-stack/) — Preview environment infrastructure
 
 ## Related Documentation
 

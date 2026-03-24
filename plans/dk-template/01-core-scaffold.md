@@ -1,5 +1,7 @@
 # Core Scaffold: GitOps + K8s Manifests + Init Script
 
+**Status:** Complete
+
 ## Context
 
 dk-template needs to generate the complete GitOps and Kubernetes directory structure for any new Data Kinetic product repo. This is the foundation -- every other plan builds on this scaffold. The init.sh script handles placeholder replacement, multi-service support, and self-cleanup.

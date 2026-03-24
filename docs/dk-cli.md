@@ -4,10 +4,10 @@
 
 `dk` is the Data Kinetic platform CLI — a single entry point for scaffolding, local development, secrets, observability, standards compliance, and issue governance across all product repos.
 
-**Package:** `@datakinetic/cli` on [npm](https://www.npmjs.com/)
-**Repository:** [`data-kinetic/dk-cli`](https://github.com/data-kinetic/dk-cli)
-**Runtime:** [Node.js](https://nodejs.org/) (TypeScript)
-**Install:** `npm install -g @datakinetic/cli`
+**Package:** [`dk-alchemy/src/dk-cli/`](https://github.com/data-kinetic/dk-alchemy/tree/main/src/dk-cli)
+**Runtime:** [Bun](https://bun.sh/) (TypeScript, compiled binary)
+**Install:** `curl -fsSL https://dk.datakinetic.com/install | sh`
+**Update:** `dk self-update`
 
 ## Commands
 
@@ -85,6 +85,19 @@ Commands backed by the [Platform API](platform-api.md), which orchestrates docke
 | `dk preview list` | Show all active preview deployments with URLs and status |
 | `dk preview logs <name>` | Stream logs from a preview's services |
 
+### Plugin System
+
+| Command | Purpose |
+|---------|---------|
+| `dk self-update` | Check for and install the latest dk binary from GitHub Releases |
+| `dk skills list` | Show available skills from the registry and their install status |
+| `dk skills install <name>` | Download and install a skill from the [git-backed registry](https://github.com/data-kinetic/dk-alchemy/tree/main/packages/dk-skills) |
+| `dk skills update` | Update all installed skills to latest versions |
+| `dk hooks list` | Show available hooks and their install status |
+| `dk hooks install <name>` | Download and install a hook from the registry |
+| `dk hooks update` | Update all installed hooks |
+| `dk doctor` | Diagnose dk installation, configuration, and connectivity to Platform API |
+
 ## Configuration
 
 `dk` reads configuration from `.dk-standards.yaml` in the repo root (same file used by [standards compliance](standards-compliance.md) CI checks):
@@ -115,7 +128,7 @@ api_token: dk_...                    # Personal API token (for dk llm, dk previe
 ## Architecture
 
 ```
-dk-cli/
+dk-alchemy/src/dk-cli/
 ├── src/
 │   ├── index.ts                   # CLI entry point (commander)
 │   ├── commands/
@@ -130,7 +143,11 @@ dk-cli/
 │   │   ├── check.ts               # dk check
 │   │   ├── labels.ts              # dk labels *
 │   │   ├── llm.ts                 # dk llm * (via Platform API)
-│   │   └── preview.ts             # dk preview * (via Platform API)
+│   │   ├── preview.ts             # dk preview * (via Platform API)
+│   │   ├── self-update.ts         # dk self-update
+│   │   ├── skills.ts              # dk skills *
+│   │   ├── hooks.ts               # dk hooks *
+│   │   └── doctor.ts              # dk doctor
 │   ├── lib/
 │   │   ├── api-client.ts          # Platform API HTTP client
 │   │   ├── doppler.ts             # Doppler API client
@@ -138,12 +155,38 @@ dk-cli/
 │   │   ├── github.ts              # GitHub API (labels, repos, PRs)
 │   │   ├── kustomize.ts           # Kustomize validation
 │   │   ├── standards.ts           # Standards check logic
-│   │   └── config.ts              # Config file parsing
+│   │   ├── config.ts              # Config file parsing
+│   │   └── registry.ts            # Skills/hooks registry client
 │   └── templates/                 # Scaffolding templates (copied from dk-template)
 ├── package.json
 ├── tsconfig.json
+└── build.ts                       # Bun cross-compilation script
+```
+
+## Skills & Hooks Registry
+
+Skills and hooks are distributed via a git-backed registry in [`dk-alchemy/packages/dk-skills/`](https://github.com/data-kinetic/dk-alchemy/tree/main/packages/dk-skills):
+
+```
+packages/dk-skills/
+├── skills/           # Skill definitions (YAML/TypeScript)
+├── hooks/            # Hook scripts (shell/TypeScript)
+├── manifest.json     # Version registry with SHA256 checksums
 └── README.md
 ```
+
+Installed locally to `~/.dk/`:
+
+```
+~/.dk/
+├── config.yaml       # Global configuration
+├── skills/           # Downloaded skills
+├── hooks/            # Downloaded hooks
+├── manifest.lock     # Installed versions + checksums
+└── bin/dk            # Binary (if installed via curl)
+```
+
+Version checking runs in the background on every `dk` invocation. If updates are available, a non-blocking message is displayed.
 
 ## Label Taxonomy
 
@@ -183,3 +226,4 @@ The label definitions (name, color, description) are stored as a YAML file in dk
 - [Secrets Management](secrets-management.md) — Doppler integration details
 - [Issue Governance](issue-governance.md) — label taxonomy and governance automation
 - [GitOps & CD](gitops-and-cd.md) — local development patterns
+- [dk-cli PRD](../plans/dk-alchemy/12-dk-cli-prd.md) — comprehensive product requirements document

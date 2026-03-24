@@ -1,5 +1,7 @@
 # Observability: Dashboard & Alert Templates
 
+**Status:** Complete
+
 ## Context
 
 Every product service should ship with a baseline Grafana dashboard and alert rules. dk-template generates these scaffolds with product/service-specific UIDs and labels, deployed via Kustomize components that sync to Grafana.
