@@ -35,7 +35,7 @@ This directory contains prioritized plans to align the current state with dk-pla
 |---|------|----------|--------|--------|--------|
 | 01 | [Critical Fixes](01-critical-fixes.md) | P0 | Critical | **COMPLETE** | #290, #292, #295, vmfast — all resolved |
 | 02 | [HA & Resilience](02-ha-and-resilience.md) | P1 | Critical | In progress — pods redistributed 55/45, CNPG standby on krang pending | #292 closed, spec-013 |
-| 03 | [Backup & DR](03-backup-and-dr.md) | P1 | High | Pending — no CNPG backups configured | #239, #243, spec-014 |
+| 03 | [Backup & DR](03-backup-and-dr.md) | P1 | High | Partial — CNPG hourly backups to MinIO active, off-site replication + restore testing pending | #239, #243, spec-014 |
 | 04 | [Network & Edge](04-network-and-edge.md) | P2 | Medium | Partial — edge failover verified (Mar 2026), VRRP monitoring pending | #294, #251, spec-009 |
 | 05 | [Storage Optimization](05-storage-optimization.md) | P1 | High | **COMPLETE** — nvfast at 9%, PVC placement correct (staging MinIO storage class TBD) | spec-007 |
 | 06 | [VM Lifecycle](06-vm-lifecycle.md) | P3 | Low | Backlog | spec-013 |
