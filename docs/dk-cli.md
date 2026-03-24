@@ -98,6 +98,27 @@ Commands backed by the [Platform API](platform-api.md), which orchestrates docke
 | `dk hooks update` | Update all installed hooks |
 | `dk doctor` | Diagnose dk installation, configuration, and connectivity to Platform API |
 
+### Infrastructure
+
+| Command | Purpose |
+|---------|---------|
+| `dk health` | Run full infrastructure health check — K3s nodes, ArgoCD sync, storage pools, edge LBs, VMs, Platform API, LiteLLM |
+| `dk health --cluster` | Check K3s cluster status (nodes, pods, storage) via SSH to k3s-master-1 |
+| `dk health --preview` | Check VM101 preview stack health (containers, disk, load) via health endpoint |
+| `dk health --platform` | Check Platform API health and readiness at dk.datakinetic.com |
+| `dk health --litellm` | Check LiteLLM proxy connectivity and model availability |
+| `dk ssh <target>` | SSH shortcut to infrastructure targets (penguin, krang, k3s, k3s-slave, litellm, preview, phantom, venom) |
+| `dk kubectl <args>` | Proxy kubectl commands to K3s master via SSH jump host |
+
+### Cross-Repo Operations
+
+| Command | Purpose |
+|---------|---------|
+| `dk status` | Show cross-repo dashboard — milestones, P0 issues, blocked work, phase gate status across dk-alchemy, dk-clusters, dk-template |
+| `dk status <phase>` | Show status for a specific phase (0-3) |
+| `dk notify <message>` | Send coordination message to Slack (#dk-infrastructure channel) |
+| `dk notify dm <message>` | Send DM to Nick King for escalations/blockers |
+
 ## Configuration
 
 `dk` reads configuration from `.dk-standards.yaml` in the repo root (same file used by [standards compliance](standards-compliance.md) CI checks):
@@ -123,6 +144,12 @@ github_org: data-kinetic
 default_runner: standard
 api_url: https://dk.datakinetic.com  # Platform API base URL
 api_token: dk_...                    # Personal API token (for dk llm, dk preview, dk labels sync --org)
+
+# Infrastructure
+ssh_jump_host: penguin           # Jump host for K3s/edge LB access
+k3s_master: 10.0.0.11           # K3s master IP
+preview_host: 192.168.10.51     # VM101 preview stack
+litellm_host: 192.168.10.50     # LiteLLM proxy
 ```
 
 ## Architecture
@@ -147,7 +174,12 @@ dk-alchemy/src/dk-cli/
 │   │   ├── self-update.ts         # dk self-update
 │   │   ├── skills.ts              # dk skills *
 │   │   ├── hooks.ts               # dk hooks *
-│   │   └── doctor.ts              # dk doctor
+│   │   ├── doctor.ts              # dk doctor
+│   │   ├── health.ts             # dk health (infrastructure checks)
+│   │   ├── ssh.ts                # dk ssh <target>
+│   │   ├── kubectl.ts            # dk kubectl proxy
+│   │   ├── status-dashboard.ts   # dk status (cross-repo)
+│   │   └── notify.ts             # dk notify (Slack)
 │   ├── lib/
 │   │   ├── api-client.ts          # Platform API HTTP client
 │   │   ├── doppler.ts             # Doppler API client
@@ -156,7 +188,9 @@ dk-alchemy/src/dk-cli/
 │   │   ├── kustomize.ts           # Kustomize validation
 │   │   ├── standards.ts           # Standards check logic
 │   │   ├── config.ts              # Config file parsing
-│   │   └── registry.ts            # Skills/hooks registry client
+│   │   ├── registry.ts            # Skills/hooks registry client
+│   │   ├── ssh.ts                # SSH connection helpers (jump hosts)
+│   │   └── cluster.ts            # K3s cluster health checks
 │   └── templates/                 # Scaffolding templates (copied from dk-template)
 ├── package.json
 ├── tsconfig.json

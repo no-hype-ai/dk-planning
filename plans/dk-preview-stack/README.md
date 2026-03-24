@@ -9,16 +9,19 @@ Plans for standardizing the preview stack on VM101 (preview-stack). VM101 curren
 | # | Plan | Priority | Status |
 |---|------|----------|--------|
 | 01 | [VM101 Assessment](01-vm101-assessment.md) | — | ✅ Complete (2026-03-23) |
-| 02 | [Standardization Plan](02-standardization-plan.md) | High | In Progress — Phase 0 complete |
+| 02 | [Standardization Plan](02-standardization-plan.md) | High | ✅ Complete (2026-03-24) |
 
 ## Key Findings
 
-- VM101 runs 15 Docker Compose projects with 63 containers
-- **Phase 0 stabilization complete:** UFW active, disk at 59%, load average ~4.3
+- VM101 runs 15 Docker Compose projects with ~20 containers (down from 59)
+- **All phases complete:** UFW active, disk at 52%, load average ~1.3
 - Automated cleanup installed (hourly TTL, weekly prune, daily archive)
 - Health endpoint available at port 9100
-- Remaining gaps: 7 Postgres + 4 Redis instances still on 0.0.0.0, Platform API not yet deployed
+- Platform API connectivity restored (PR #351), endpoints implemented (PR #342)
+- Network isolation applied to 16 projects; Grafana dashboard created (PR #350)
+- Alert rules defined (disk warning/critical, load, health endpoint)
 - Docs now reflect actual specs: 16 vCPU / 125 GiB RAM / 485 GB disk
+- Remaining: dk-cli integration (Phase 4), GitHub webhook automation, SSH key in Doppler
 
 ## Dependencies
 
