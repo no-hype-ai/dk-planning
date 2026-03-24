@@ -34,7 +34,7 @@ This directory contains prioritized plans to align the current state with dk-pla
 | # | Plan | Priority | Impact | Status | Issues |
 |---|------|----------|--------|--------|--------|
 | 01 | [Critical Fixes](01-critical-fixes.md) | P0 | Critical | **COMPLETE** | #290, #292, #295, vmfast — all resolved |
-| 02 | [HA & Resilience](02-ha-and-resilience.md) | P1 | Critical | In progress — nodes joined, zone labels applied, workload redistribution pending | #292 closed, spec-013 |
+| 02 | [HA & Resilience](02-ha-and-resilience.md) | P1 | Critical | In progress — pods redistributed 55/45, CNPG standby on krang pending | #292 closed, spec-013 |
 | 03 | [Backup & DR](03-backup-and-dr.md) | P1 | High | Pending — no CNPG backups configured | #239, #243, spec-014 |
 | 04 | [Network & Edge](04-network-and-edge.md) | P2 | Medium | Partial — edge failover verified (Mar 2026), VRRP monitoring pending | #294, #251, spec-009 |
 | 05 | [Storage Optimization](05-storage-optimization.md) | P1 | High | **COMPLETE** — nvfast at 9%, PVC placement correct (staging MinIO storage class TBD) | spec-007 |
@@ -114,6 +114,22 @@ dk-clusters/
 | 012-k3s-cluster-reconciliation | Superseded by 013 | 02 |
 | 013-dc-consolidation-ha | In progress | 02, 06 |
 | 014-sentinel-probe-deployment | SSH blocker | 03 |
+
+## Completion Log
+
+| Date | Action | Details |
+|------|--------|---------|
+| 2026-03-23 | Phase 0 complete | All 4 critical fixes resolved: reflector, Alloy, vmfast, krang join |
+| 2026-03-23 | HA workload redistribution | Rolling restarts distributed pods 55%/45% across k3s-master-1/k3s-slave-1 |
+| 2026-03-23 | CNPG backups verified | ScheduledBackup active, 19+ hourly backups to MinIO s3://backups/postgres |
+| 2026-03-23 | Edge failover verified | VRRP operational, all 8 TLS certs Ready, 28 ingress routes |
+| 2026-03-23 | Cross-host routing fixed | Added MASQUERADE rule on krang for vmbr0→vmbr1 NAT (10.0.0.x) |
+| 2026-03-23 | VM 200 HA enabled | k3s-master-1 now has Proxmox HA (max_restart=3, max_relocate=2) |
+| 2026-03-23 | VM 102 onboot disabled | Stopped VM won't waste 96 GiB on reboot |
+| 2026-03-23 | VM 101 right-sized | Memory reduced 128→64 GiB, freeing 64 GiB on penguin |
+| 2026-03-23 | Stale pods cleaned | 132 Failed pods removed across all namespaces |
+| 2026-03-23 | Grafana dashboards added | Edge VRRP + Storage Capacity dashboards, 4 alert rules |
+| 2026-03-23 | keepalived_exporter added | Sidecar + Alloy scrape targets for VRRP metrics |
 
 ## Related Plans
 

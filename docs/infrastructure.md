@@ -114,7 +114,7 @@ Full list of infrastructure components managed via `dk-infrastructure` Applicati
 
 ## Gaps
 
-- **Node-local storage constrains HA** — `local-path` provisioner means PVCs on k3s-master-1 cannot be accessed from k3s-slave-1. Draining k3s-master-1 causes downtime for all stateful services bound to that node. This is the primary HA constraint. CNPG standby replicas on krang would mitigate for PostgreSQL.
+- **Node-local storage constrains HA** — `local-path` provisioner means PVCs on k3s-master-1 cannot be accessed from k3s-slave-1. Draining k3s-master-1 causes downtime for all stateful services bound to that node. This is the primary HA constraint. Stateless workloads are distributed across both nodes (55%/45% as of Mar 2026). CNPG standby replicas on krang would mitigate for PostgreSQL.
 - **Edge LB scaling is manual** — adding a third node requires new Keepalived overlays and matrix generator updates
 - **Single-replica observability backends** — Loki, Mimir, Tempo each run as a single replica; acceptable for current scale but a risk for availability
 - **No automated capacity planning** — storage usage alerts exist but no proactive scaling

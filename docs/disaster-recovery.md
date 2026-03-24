@@ -142,7 +142,7 @@ The `dk-edge-infrastructure` ApplicationSet's **matrix generator** (2 clusters x
 
 ## Gaps
 
-- **No PostgreSQL backups configured** — CNPG has backup capability but no scheduled backup or WAL archiving target is configured. Data loss risk is unbounded until this is addressed.
+- **PostgreSQL backups operational** — CNPG ScheduledBackup running hourly to MinIO (s3://backups/postgres), 30-day retention. Off-site replication to external S3 not yet configured.
 - **No automated backup verification** — backups may exist but are never tested
 - **PVC locality constrains DR** — all PVCs are node-local (local-path provisioner). Draining k3s-master-1 causes downtime for stateful services. CNPG standby replicas on krang would mitigate for PostgreSQL.
 - **No multi-cluster capability** — 2-node cluster operational (penguin + krang) but no cross-cluster failover

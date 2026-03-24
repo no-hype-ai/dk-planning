@@ -50,7 +50,7 @@ Master execution plan across all workstreams. Synthesized from 25 plans across 3
 
 | # | Task | Plan | Effort | Unblocks |
 |---|------|------|--------|----------|
-| 1.5 | HA cluster (workload distribution, anti-affinity, CNPG standby) | [dk-clusters/02](plans/dk-clusters/02-ha-and-resilience.md) | Large | Backup & DR (03) |
+| 1.5 | HA cluster (workload distribution, anti-affinity, CNPG standby) | [dk-clusters/02](plans/dk-clusters/02-ha-and-resilience.md) | Large | **Partial** — pods redistributed 55/45, CNPG standby pending. Backup & DR (03) |
 | 1.6 | Storage optimization (vmfast migration, capacity alerting) | [dk-clusters/05](plans/dk-clusters/05-storage-optimization.md) | Medium | **Largely complete** — nvfast at 9%, PVC placement verified. Capacity dashboard pending. |
 
 ### Phase 1 Exit Criteria
@@ -60,7 +60,7 @@ Master execution plan across all workstreams. Synthesized from 25 plans across 3
 - [ ] Grafana OnCall routing by team label
 - [ ] Shared build-deploy workflow used by dk-alchemy CI
 - [ ] `npm install @datakinetic/observability` succeeds
-- [ ] Production pods distributed across penguin and krang
+- [x] Production pods distributed across penguin and krang *(55%/45% after rolling restarts, Mar 2026)*
 - [ ] Grafana storage dashboard with capacity alerts
 
 ---
