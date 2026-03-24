@@ -159,7 +159,7 @@ Phase 3: VM Decommission (+8 weeks)
 - [ ] All K8s services connect to data stores without errors
 - [ ] BullMQ queues processing on shared Redis
 - [ ] Socket.io presence working via shared Redis
-- [ ] File uploads/downloads via SeaweedFS (Phase 1) or MinIO (Phase 2)
+- [ ] File uploads/downloads via SeaweedFS (Phase 1: Megatron, Phase 2: dk-alchemy)
 - [ ] LLM features working via dk-litellm
 - [ ] Grafana dashboards showing DK-OS metrics via dk-alchemy LGTM
 - [ ] Connection pooling verified (PgBouncer sidecar active)

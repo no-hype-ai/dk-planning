@@ -74,12 +74,12 @@ The platform infrastructure documented in dk-planning provides the technical con
 |----------------------|-----------------|---------------------|
 | Access control & RBAC | ArgoCD AppProjects, namespace isolation | [Security & Compliance](../security-and-compliance.md) |
 | Secrets management | Doppler Operator, no secrets in Git | [Secrets Management](../secrets-management.md) |
-| Encryption at rest | PostgreSQL, MinIO, Redis encryption | [Infrastructure](../infrastructure.md) |
+| Encryption at rest | PostgreSQL, SeaweedFS, Redis encryption | [Infrastructure](../infrastructure.md) |
 | Audit logging | K8s audit logs, GitHub audit log, Grafana | [Security & Compliance](../security-and-compliance.md) |
 | Monitoring & alerting | LGTM stack, 26 dashboards, 26 alert rules | [Observability](../observability.md) |
 | Incident response | On-call escalation, SLO burn-rate alerting | [Incident Management](../incident-management.md) |
 | Supply chain security | SBOM, provenance attestation, image scanning | [CI/CD Pipelines](../ci-cd-pipelines.md) |
-| Backup & disaster recovery | PostgreSQL WAL, MinIO mirror, documented runbook | [Disaster Recovery](../disaster-recovery.md) |
+| Backup & disaster recovery | PostgreSQL WAL, SeaweedFS mirror, documented runbook | [Disaster Recovery](../disaster-recovery.md) |
 | Change management | GitOps, PR review, standards compliance CI | [GitOps & CD](../gitops-and-cd.md), [Standards Compliance](../standards-compliance.md) |
 | Policy enforcement (planned) | Kyverno admission control | [Security & Compliance](../security-and-compliance.md) |
 

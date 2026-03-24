@@ -175,7 +175,7 @@ Compliance management is centralized in [`dk-compliance-v2`](https://github.com/
 - **Access control:** [ArgoCD](https://argo-cd.readthedocs.io/) AppProject RBAC, namespace isolation, [Doppler](https://docs.doppler.com/) role-based access
 - **Audit logging:** [Kubernetes](https://kubernetes.io/docs/) audit logs, GitHub audit log (API polling), [Grafana](https://grafana.com/docs/grafana/latest/) security dashboard (planned)
 - **Change management:** GitOps-only deployments, PR review gates, standards compliance CI checks
-- **Encryption at rest:** [PostgreSQL](https://www.postgresql.org/docs/) volume encryption, [MinIO](https://min.io/docs/minio/linux/index.html) server-side encryption, [Redis](https://redis.io/docs/) AOF on encrypted volumes
+- **Encryption at rest:** [PostgreSQL](https://www.postgresql.org/docs/) volume encryption, [SeaweedFS](https://github.com/seaweedfs/seaweedfs) server-side encryption, [Redis](https://redis.io/docs/) AOF on encrypted volumes
 - **MFA:** Required for GitHub, Doppler, Grafana, [Proxmox](https://pve.proxmox.com/pve-docs/) admin accounts
 - **Supply chain:** SBOM generation, provenance attestation, image scanning via CI
 

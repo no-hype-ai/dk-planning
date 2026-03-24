@@ -6,7 +6,7 @@ behavior-labs-ai runs dual Sentry + OTel, creating redundant cost and complexity
 ## Scope
 - Phase 1 (Parallel): Add OTel resource attributes, mirror Sentry alert rules in Grafana, validate parity
 - Phase 2 (Remove Sentry): Remove SDK dependencies, env vars, Sentry calls
-- Phase 3 (Replace features): Profiling → Pyroscope, Session replay → PostHog Recordings, Frontend RUM → Grafana Faro, Issue grouping → LogQL, Source maps → MinIO, Release tracking → OTel attributes
+- Phase 3 (Replace features): Profiling → Pyroscope, Session replay → PostHog Recordings, Frontend RUM → Grafana Faro, Issue grouping → LogQL, Source maps → SeaweedFS, Release tracking → OTel attributes
 - Out of scope: Non-behavior-labs-ai repos (they don't have Sentry)
 
 ## Dependencies

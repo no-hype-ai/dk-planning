@@ -35,9 +35,9 @@ This directory contains prioritized plans to align the current state with dk-pla
 |---|------|----------|--------|--------|--------|
 | 01 | [Critical Fixes](01-critical-fixes.md) | P0 | Critical | **COMPLETE** | #290, #292, #295, vmfast — all resolved |
 | 02 | [HA & Resilience](02-ha-and-resilience.md) | P1 | Critical | In progress — pods redistributed 55/45, CNPG standby on krang pending | #292 closed, spec-013 |
-| 03 | [Backup & DR](03-backup-and-dr.md) | P1 | High | Partial — CNPG hourly backups to MinIO active, off-site replication + restore testing pending | #239, #243, spec-014 |
+| 03 | [Backup & DR](03-backup-and-dr.md) | P1 | High | Partial — CNPG hourly backups to SeaweedFS active, off-site replication + restore testing pending | #239, #243, spec-014 |
 | 04 | [Network & Edge](04-network-and-edge.md) | P2 | Medium | Partial — edge failover verified (Mar 2026), VRRP monitoring pending | #294, #251, spec-009 |
-| 05 | [Storage Optimization](05-storage-optimization.md) | P1 | High | **COMPLETE** — nvfast at 9%, PVC placement correct (staging MinIO storage class TBD) | spec-007 |
+| 05 | [Storage Optimization](05-storage-optimization.md) | P1 | High | **COMPLETE** — nvfast at 9%, PVC placement correct (staging SeaweedFS storage class TBD) | spec-007 |
 | 06 | [VM Lifecycle](06-vm-lifecycle.md) | P3 | Low | Backlog | spec-013 |
 | 07 | [Proxmox Monitoring](07-proxmox-monitoring.md) | P1 | High | **COMPLETE** — node_exporter on penguin+krang, pve-exporter on penguin, DCGM in vllm-minimax VM | — |
 
@@ -124,7 +124,7 @@ dk-clusters/
 |------|--------|---------|
 | 2026-03-23 | Phase 0 complete | All 4 critical fixes resolved: reflector, Alloy, vmfast, krang join |
 | 2026-03-23 | HA workload redistribution | Rolling restarts distributed pods 55%/45% across k3s-master-1/k3s-slave-1 |
-| 2026-03-23 | CNPG backups verified | ScheduledBackup active, 19+ hourly backups to MinIO s3://backups/postgres |
+| 2026-03-23 | CNPG backups verified | ScheduledBackup active, 19+ hourly backups to SeaweedFS s3://backups/postgres |
 | 2026-03-23 | Edge failover verified | VRRP operational, all 8 TLS certs Ready, 28 ingress routes |
 | 2026-03-23 | Cross-host routing fixed | Added MASQUERADE rule on krang for vmbr0→vmbr1 NAT (10.0.0.x) |
 | 2026-03-23 | VM 200 HA enabled | k3s-master-1 now has Proxmox HA (max_restart=3, max_relocate=2) |

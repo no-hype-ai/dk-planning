@@ -21,7 +21,7 @@ Two related initiatives that improve CI/CD reliability, performance, and cross-r
 | Webhook domain | `webhooks.datakinetic.com` | Dedicated subdomain for webhook traffic |
 | GitHub auth | GitHub App (not PAT) | Short-lived tokens (1h), per-repo scoping, auditable |
 | Webhook scope | Replaces all CI-driven kustomize commits | Not just one repo — all product repos send webhooks |
-| Megatron runners | Decommission directly | Stale/experimental runners on DK-OS and lithium-5, no migration period needed |
+| Megatron runners | Decommission directly | Stale/experimental runners on DK-OS, no migration period needed |
 
 ---
 
@@ -47,7 +47,7 @@ GitHub.com ──webhook──► ARC Controller (arc-system namespace)
 | Container builds | **Docker-in-Docker (privileged sidecar)** | Existing Dockerfiles use `--mount=type=secret` for [Doppler](https://docs.doppler.com/). Kaniko doesn't support this. Buildah would require Dockerfile rewrites. Ephemeral pods mitigate privilege risk. |
 | Workspace storage | **emptyDir (ephemeral)** | No state between jobs. Prevents data leakage. |
 | Build cache | **Registry-based (`--cache-from`/`--cache-to` [GHCR](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry))** | No shared PVC needed. BuildKit pushes/pulls layer cache to `ghcr.io/<repo>/cache`. |
-| Turborepo cache | **Self-hosted remote cache on MinIO** | Configure `TURBO_API` pointing to MinIO S3 endpoint |
+| Turborepo cache | **Self-hosted remote cache on SeaweedFS** | Configure `TURBO_API` pointing to SeaweedFS S3 endpoint |
 | Auth | **GitHub App** (not PAT) | Short-lived tokens (1h), scoped per-repo, auditable |
 | Node placement | **nodeAffinity** on runner class | standard/large → penguin, gpu → krang |
 
@@ -128,9 +128,9 @@ Both directories are auto-discovered by the `dk-infrastructure` ApplicationSet (
 | 1 | Deploy ARC controller + standard runners, test with dk-alchemy validation workflows | dk-alchemy |
 | 2 | Migrate dk-alchemy Docker builds (ddns, probe) to `runs-on: [self-hosted, standard]` | dk-alchemy |
 | 3 | Migrate behavior-labs-ai to `runs-on: [self-hosted, large]` for Docker builds | behavior-labs-ai |
-| 4 | Roll out to remaining repos | carbon-5, lithium-5, DK-OS, dk-compliance-v2 |
-| 5 | Deploy gpu runners on krang for ML workloads | lithium-5, carbon-5 |
-| 6 | Decommission Megatron stale runners (no migration needed, just remove) | DK-OS, lithium-5 |
+| 4 | Roll out to remaining repos | carbon-5, DK-OS, dk-compliance-v2 |
+| 5 | Deploy gpu runners on krang for ML workloads | DK-OS agent-mesh, carbon-5 |
+| 6 | Decommission Megatron stale runners (no migration needed, just remove) | DK-OS |
 | 7 | Optionally keep GitHub-hosted as fallback (`runs-on` matrix) | All |
 
 ---
@@ -203,10 +203,10 @@ async def handle_pr_event(payload):
         return
     if not is_staging_branch(payload.pull_request.base.ref):
         return  # Only review PRs targeting staging branches
-    await forward_to_lithium5("/api/critic/review", payload)
+    await forward_to_dk_os_agent_mesh("/api/critic/review", payload)
 ```
 
-When a PR is opened or updated against a staging branch, the webhook service forwards the event to lithium-5's PR critic service for automated review. The critic runs on krang GPUs and posts review comments back to the PR via GitHub API.
+When a PR is opened or updated against a staging branch, the webhook service forwards the event to DK-OS agent-mesh's PR critic service for automated review. The critic runs on krang GPUs and posts review comments back to the PR via GitHub API.
 
 ### Kustomize Tag Update Flow (Primary Handler)
 
@@ -235,7 +235,7 @@ dk-alchemy-webhooks (Doppler project)
     GITHUB_WEBHOOK_SECRET           # Org-level GitHub webhook
     WEBHOOK_SECRET_BEHAVIOR_LABS    # Per-repo HMAC secrets
     WEBHOOK_SECRET_CARBON_5
-    WEBHOOK_SECRET_LITHIUM_5
+    WEBHOOK_SECRET_DK_OS
     WEBHOOK_SECRET_DK_OS
     ARGOCD_AUTH_TOKEN               # ArgoCD API
     SLACK_WEBHOOK_URL               # Slack notifications

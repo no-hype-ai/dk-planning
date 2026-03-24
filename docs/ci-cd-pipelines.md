@@ -176,7 +176,7 @@ jobs:
 ### Build Caching
 
 - **Docker layers**: Registry-based cache via `--cache-from`/`--cache-to` on GHCR (`ghcr.io/<repo>/cache`)
-- **Turborepo**: Self-hosted remote cache on [MinIO](https://min.io/docs/minio/linux/index.html) (`TURBO_API` → MinIO S3 endpoint)
+- **Turborepo**: Self-hosted remote cache on [SeaweedFS](https://github.com/seaweedfs/seaweedfs) (`TURBO_API` → SeaweedFS S3 endpoint)
 
 ## Webhook-Driven Deployments
 
