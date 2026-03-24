@@ -10,7 +10,7 @@ All secrets are managed via **[Doppler](https://docs.doppler.com/)** — no secr
 Doppler SaaS (source of truth)
   ├── Projects
   │   ├── behaviorlabs-applications (dev, stg, prd)
-  │   ├── behaviorlabs-infrastructure (postgres, redis, minio, alloy)
+  │   ├── behaviorlabs-infrastructure (postgres, redis, seaweedfs, alloy)
   │   └── <product>-applications (per product repo)
   │
   └── Syncs via Doppler Operator ──→ Kubernetes Secrets
@@ -24,7 +24,7 @@ Doppler SaaS (source of truth)
 | Component | Namespace | Purpose |
 |-----------|-----------|---------|
 | **Doppler Operator** | `doppler-operator-system` | Watches `DopplerSecret` CRDs, syncs to K8s Secrets |
-| **DopplerSecret CRDs** (infra) | `infra` | Infrastructure secrets (DB, [Redis](https://redis.io/docs/), [MinIO](https://min.io/docs/minio/linux/index.html), [Alloy](https://grafana.com/docs/alloy/latest/)) |
+| **DopplerSecret CRDs** (infra) | `infra` | Infrastructure secrets (DB, [Redis](https://redis.io/docs/), [SeaweedFS](https://github.com/seaweedfs/seaweedfs), [Alloy](https://grafana.com/docs/alloy/latest/)) |
 | **DopplerSecret CRDs** (apps) | per-namespace | Application secrets per product/environment |
 | **[ArgoCD](https://argo-cd.readthedocs.io/) Doppler secrets** | `argocd` | ArgoCD credentials, repo access tokens |
 
@@ -33,7 +33,7 @@ Doppler SaaS (source of truth)
 | Project | Configs | Used By |
 |---------|---------|---------|
 | `behaviorlabs-applications` | `dev`, `stg`, `prd` | behavior-labs-ai (API, app, admin) |
-| `behaviorlabs-infrastructure` | — | [PostgreSQL](https://www.postgresql.org/docs/), Redis, MinIO, Alloy |
+| `behaviorlabs-infrastructure` | — | [PostgreSQL](https://www.postgresql.org/docs/), Redis, SeaweedFS, Alloy |
 | `dk-alchemy-runners` | `prd` | GitHub App credentials for ARC v2 self-hosted runners |
 | `dk-alchemy-webhooks` | `prd` | Webhook service secrets: GitHub App, per-repo HMAC secrets, ArgoCD token, [Slack](https://api.slack.com/) URL, Grafana API key |
 

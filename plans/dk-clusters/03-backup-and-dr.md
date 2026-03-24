@@ -30,13 +30,13 @@ No automated backup testing, no off-site replication, and the sentinel probe (ex
      backup:
        barmanObjectStore:
          destinationPath: s3://dk-backups/postgres/
-         endpointURL: http://minio.infra.svc.cluster.local:9000
+         endpointURL: http://seaweedfs-s3.infra.svc.cluster.local:8333
          s3Credentials:
            accessKeyId:
-             name: minio-credentials
+             name: seaweedfs-credentials
              key: access-key
            secretAccessKey:
-             name: minio-credentials
+             name: seaweedfs-credentials
              key: secret-key
        retentionPolicy: "30d"
      scheduledBackup:
@@ -48,10 +48,11 @@ No automated backup testing, no off-site replication, and the sentinel probe (ex
 3. Set up Grafana alert for backup failures
 
 ### Phase 2: Off-Site Replication (#239)
-4. Configure MinIO mc mirror to external S3:
+4. Configure rclone sync to external S3:
    ```bash
-   mc alias set offsite https://s3.amazonaws.com ACCESS_KEY SECRET_KEY
-   mc mirror --watch minio/dk-backups offsite/dk-offsite-backups
+   rclone config create seaweedfs s3 provider Other endpoint http://seaweedfs-s3.infra.svc.cluster.local:8333 access_key_id ACCESS_KEY secret_access_key SECRET_KEY
+   rclone config create offsite s3 provider AWS region us-east-1 access_key_id ACCESS_KEY secret_access_key SECRET_KEY
+   rclone sync seaweedfs:dk-backups offsite:dk-offsite-backups
    ```
 5. Schedule via CronJob in K8s or cron on dk-shared-services VM
 6. Verify: external bucket receives backup files within 4 hours (RPO target)

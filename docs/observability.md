@@ -86,7 +86,7 @@ All run as single-replica StatefulSets on `local-path-bulk`:
 | Folder | Dashboards |
 |--------|------------|
 | **cluster/** | cluster-overview |
-| **infrastructure/** | alloy, arc-runners, argocd, cert-manager, doppler, minio, postgres-cnpg, probe-service, redis, traefik, webhook-service |
+| **infrastructure/** | alloy, arc-runners, argocd, cert-manager, doppler, seaweedfs, postgres-cnpg, probe-service, redis, traefik, webhook-service |
 | **observability/** | loki, mimir, tempo (self-monitoring) |
 | **applications/** | api-performance, behavior-labs-admin, behavior-labs-api, behavior-labs-apps, dk-data-api, dk-data-pipeline, dk-data-platform-status, dk-data-postgrest-slo, feature-usage, litellm, lithium-overview, org-analytics, product-analytics |
 | **slo/** | *(empty — placeholder)* |
@@ -240,7 +240,7 @@ dk-alchemy's notification policy routes by `team` label. New teams register a Sl
 │  ├── monitoring/dashboards/          ├── monitoring/alerts/             │
 │  ├── monitoring/alerts/              └── k8s (includes otlp-collector)  │
 │  ├── monitoring/recording-rules/                                        │
-│  ├── k8s (includes otlp-collector)   carbon-5/ lithium-5/ DK-OS/       │
+│  ├── k8s (includes otlp-collector)   carbon-5/ DK-OS/                  │
 │  └── scripts/issues/ (governance)    └── (same structure)               │
 │                                                                         │
 │  All product repos:                                                     │

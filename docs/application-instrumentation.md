@@ -107,7 +107,7 @@ The same error and trace data currently flows to **both** systems:
 | Session replay | **[PostHog](https://posthog.com/docs) Recordings** | Enable in PostHog (already integrated) |
 | Frontend RUM | **[Grafana Faro](https://grafana.com/docs/grafana-cloud/monitor-applications/frontend-observability/)** | Add Faro web SDK; sends to [Alloy](https://grafana.com/docs/alloy/latest/) OTLP endpoint |
 | Issue grouping | **LogQL alert grouping** | Group by error fingerprint (message + location hash) |
-| Source maps | **[MinIO](https://min.io/docs/minio/linux/index.html) bucket** | Upload maps to MinIO; reference in OTel log attributes |
+| Source maps | **[SeaweedFS](https://github.com/seaweedfs/seaweedfs) bucket** | Upload maps to SeaweedFS (S3-compatible); reference in OTel log attributes |
 | Release tracking | **OTel resource attributes** | `service.version` + Grafana dashboard filters |
 
 ## Shared Observability Package (Target)

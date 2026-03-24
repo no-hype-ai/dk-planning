@@ -52,7 +52,7 @@ Reusable Kustomize components in `k8s/components/`:
 | ApplicationSet | Generator | Source | Target |
 |----------------|-----------|--------|--------|
 | `dk-infrastructure` | git directory | `k8s/infrastructure/*` | `overlays/prod` → `infra` namespace |
-| `dk-infrastructure-staging` | list (9 components: doppler-secrets, postgres, redis, minio, loki, mimir, tempo, opensearch, grafana) | `k8s/infrastructure/*` | `overlays/staging` → `infra-staging` namespace |
+| `dk-infrastructure-staging` | list (9 components: doppler-secrets, postgres, redis, seaweedfs, loki, mimir, tempo, opensearch, grafana) | `k8s/infrastructure/*` | `overlays/staging` → `infra-staging` namespace |
 | `dk-edge-infrastructure` | matrix generator (2 edge clusters × 2 shared components: traefik, routes) + list (2 keepalived) = 6 Applications | `k8s/edge/*` | phantom (10.0.0.2), venom (10.0.0.3) |
 | `dk-apps` / `dk-apps-staging` | (empty) | — | Reserved |
 
@@ -62,7 +62,7 @@ Reusable Kustomize components in `k8s/components/`:
 |--------|------------|-------------|----------------|--------|
 | BehaviorLabs AI | `data-kinetic/behavior-labs-ai` | `main` | `staging` | Production |
 | BehaviorLabs Web | `data-kinetic/behavior-labs-web` | `main` | `staging` | Production |
-| Agent Mesh | `data-kinetic/agent-mesh` | `main` | `staging` | Deprecated — migrating to lithium-5 |
+| Agent Mesh | `data-kinetic/agent-mesh` | `main` | `staging` | Deprecated — migrating to DK-OS |
 | DK Data | `data-kinetic/dk-data-fe` | `main` | `staging` | Deprecated — migrating to carbon-5 |
 | DK Mercury | `data-kinetic/dk-mercury` | `main` | `staging` | Deprecated — migrating to DK-OS |
 | DK Phantom | `data-kinetic/dk-phantom` | `main` | `staging` | Deprecated — migrating to DK-OS |
@@ -73,7 +73,6 @@ Reusable Kustomize components in `k8s/components/`:
 |--------|------------|-------------|----------------|
 | Carbon-5 | `data-kinetic/carbon-5` | `main` | `staging` |
 | DK-OS | `data-kinetic-projects/DK-OS` | `main` | `staging` |
-| Lithium-5 | `data-kinetic/lithium-5` | `main` | `staging` |
 | DK Compliance v2 | `data-kinetic/dk-compliance-v2` | `main` | `staging` |
 
 ## Local Development

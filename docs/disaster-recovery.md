@@ -16,8 +16,8 @@ This document covers backup strategy, recovery procedures, and multi-cluster rea
 | **Secrets** | Recoverable via [Doppler](https://docs.doppler.com/) | Doppler Operator re-syncs from SaaS on pod restart |
 | **sentinel-probe** | External monitoring | AWS EC2 + WireGuard; detects outages from outside |
 | **DR scripts** | Partial | `scripts/sentinel/` has provisioning and WireGuard setup |
-| **[PostgreSQL](https://www.postgresql.org/docs/)** | CloudNativePG | 3-instance cluster operational. Backup schedule not yet configured — pending [dk-clusters Plan 03](../plans/dk-clusters/03-backup-and-dr.md) Phase 1 (CNPG scheduled backups to MinIO/S3) |
-| **[MinIO](https://min.io/docs/minio/linux/index.html)** | Distributed mode | Data replication within cluster |
+| **[PostgreSQL](https://www.postgresql.org/docs/)** | CloudNativePG | 3-instance cluster operational. Backup schedule not yet configured — pending [dk-clusters Plan 03](../plans/dk-clusters/03-backup-and-dr.md) Phase 1 (CNPG scheduled backups to SeaweedFS/S3) |
+| **[SeaweedFS](https://github.com/seaweedfs/seaweedfs)** | Distributed mode | S3-compatible object storage (replacing MinIO — [dk-planning#9](https://github.com/data-kinetic/dk-planning/issues/9)) |
 | **Observability data** | Not backed up | [Loki](https://grafana.com/docs/loki/latest/)/[Mimir](https://grafana.com/docs/mimir/latest/)/[Tempo](https://grafana.com/docs/tempo/latest/) on local-path-bulk; loss = loss of 30 days of metrics/logs/traces |
 
 ### What's Missing
@@ -43,7 +43,7 @@ If the cluster is rebuilt from scratch:
    b. Storage classes, PriorityClasses, Namespaces
    c. cert-manager → TLS certificates
    d. PostgreSQL (CloudNativePG) → restore from backup
-   e. Redis, MinIO, OpenSearch
+   e. Redis, SeaweedFS, OpenSearch
    f. LGTM stack (Loki, Mimir, Tempo, Alloy, Grafana)
    g. Traefik (in-cluster)
    h. Edge LBs (phantom, venom) → Keepalived VIPs
@@ -63,10 +63,10 @@ If the cluster is rebuilt from scratch:
 
 | Data Store | Backup Method | Restore Procedure | RPO Target |
 |------------|---------------|-------------------|------------|
-| PostgreSQL | CloudNativePG scheduled backups (daily full + continuous WAL archiving to MinIO/S3) | `kubectl cnpg restore <cluster> --backup <name>` or PITR with `--target-time` flag. Restore creates a new cluster from backup; update ArgoCD Application to point at recovered cluster. | 1h (continuous WAL) |
-| MinIO | Distributed mode provides in-cluster redundancy. For off-cluster backup: scheduled `mc mirror` to external S3 bucket (daily). | `mc mirror` from backup S3 to restored MinIO. Verify bucket policies post-restore. | 4h (daily mirror) |
+| PostgreSQL | CloudNativePG scheduled backups (daily full + continuous WAL archiving to SeaweedFS/S3) | `kubectl cnpg restore <cluster> --backup <name>` or PITR with `--target-time` flag. Restore creates a new cluster from backup; update ArgoCD Application to point at recovered cluster. | 1h (continuous WAL) |
+| SeaweedFS | Distributed mode provides in-cluster redundancy. For off-cluster backup: scheduled `rclone sync` to external S3 bucket (daily). | `rclone sync` from backup S3 to restored SeaweedFS. Verify bucket policies post-restore. | 4h (daily mirror) |
 | [Redis](https://redis.io/docs/) | RDB snapshots via sentinel (default: every 15m if 1+ write). AOF disabled — acceptable for cache/ephemeral use. | Rebuild from scratch; Redis is used as cache/message broker. Persistent state lives in PostgreSQL. For queues: BullMQ jobs will be re-enqueued by producers on reconnect. | N/A (cache) |
-| [OpenSearch](https://opensearch.org/docs/latest/) | Snapshot to MinIO via repository plugin (daily). | Register snapshot repo, `POST /_snapshot/<repo>/<snapshot>/_restore`. Verify index health post-restore. Needs investigation: snapshot automation not yet configured. | 4h (daily snapshot, once configured) |
+| [OpenSearch](https://opensearch.org/docs/latest/) | Snapshot to SeaweedFS via repository plugin (daily). | Register snapshot repo, `POST /_snapshot/<repo>/<snapshot>/_restore`. Verify index health post-restore. Needs investigation: snapshot automation not yet configured. | 4h (daily snapshot, once configured) |
 | Observability (Loki/Mimir/Tempo) | None | Accept data loss; rebuild from apps re-emitting. 30-day retention means full history is never critical. | N/A (ephemeral) |
 
 ### RTO/RPO Targets
@@ -75,28 +75,28 @@ If the cluster is rebuilt from scratch:
 |------|----------|------------|------------|-----------|
 | **Critical** | behavior-labs-ai (prod), PostgreSQL, edge LBs | 4h | 1h | Revenue-impacting, customer-facing. PostgreSQL WAL archiving provides continuous RPO. |
 | **Important** | LiteLLM, DNS, webhook service, ARC controller | 8h | 4h | Platform services that block CI/CD and LLM access. Can tolerate brief outages. |
-| **Standard** | Staging environments, observability, MinIO | 24h | 4h | Internal tooling. Staging can be rebuilt from Git. Observability data is ephemeral. |
+| **Standard** | Staging environments, observability, SeaweedFS | 24h | 4h | Internal tooling. Staging can be rebuilt from Git. Observability data is ephemeral. |
 
 ## Backup Strategy (Recommendations)
 
 ### 1. PostgreSQL (CloudNativePG)
 
 - Schedule automated backups (daily full + continuous WAL archiving)
-- Backup target: MinIO bucket or external S3
+- Backup target: SeaweedFS bucket or external S3
 - Test restores weekly (automated job)
 - Document point-in-time recovery (PITR) procedure
 
-### 2. MinIO
+### 2. SeaweedFS
 
 - Enable cross-site replication if a second cluster exists
-- Or: scheduled `mc mirror` to external S3 bucket
+- Or: scheduled `rclone sync` to external S3 bucket
 - Backup bucket policies and IAM configuration
 
 ### 3. Observability Data
 
 Accept that observability data is ephemeral (30-day retention, local storage). If longer retention is needed:
-- Configure Mimir to write blocks to S3/MinIO for long-term storage
-- Configure Loki with S3/MinIO backend for chunk storage
+- Configure Mimir to write blocks to S3/SeaweedFS for long-term storage
+- Configure Loki with S3/SeaweedFS backend for chunk storage
 - Tempo already uses local filesystem; S3 backend available
 
 ### 4. Secrets
@@ -142,13 +142,13 @@ The `dk-edge-infrastructure` ApplicationSet's **matrix generator** (2 clusters x
 
 ## Gaps
 
-- **PostgreSQL backups operational** — CNPG ScheduledBackup running hourly to MinIO (s3://backups/postgres), 30-day retention. Off-site replication to external S3 not yet configured.
+- **PostgreSQL backups operational** — CNPG ScheduledBackup running hourly to SeaweedFS (s3://backups/postgres), 30-day retention. Off-site replication to external S3 not yet configured.
 - **No automated backup verification** — backups may exist but are never tested
 - **PVC locality constrains DR** — all PVCs are node-local (local-path provisioner). Draining k3s-master-1 causes downtime for stateful services. CNPG standby replicas on krang would mitigate for PostgreSQL.
 - **No multi-cluster capability** — 2-node cluster operational (penguin + krang) but no cross-cluster failover
 - **Observability data not backed up** — acceptable and documented as a conscious decision
 - **OpenSearch snapshot automation** — snapshot repository plugin not yet configured
-- **MinIO off-cluster mirror** — `mc mirror` schedule not yet implemented
+- **SeaweedFS off-cluster mirror** — `rclone sync` schedule not yet implemented
 
 ## Related Documentation
 

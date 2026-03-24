@@ -70,8 +70,8 @@ behavior-labs-ai runs dual Sentry + OTel, creating redundant cost and complexity
 16. Deploy Grafana Faro collector endpoint in Alloy (replaces Sentry Web Vitals/RUM):
     - Add faro receiver to Alloy config
     - Add @grafana/faro-web-sdk to behavior-labs-ai frontend
-17. Configure source map upload to MinIO (replaces Sentry source maps):
-    - CI uploads source maps to MinIO bucket
+17. Configure source map upload to SeaweedFS (replaces Sentry source maps):
+    - CI uploads source maps to SeaweedFS bucket (S3-compatible)
     - Grafana/Loki references for stack trace deobfuscation
 18. Add OTel release tracking attributes (replaces Sentry Releases)
 
@@ -95,6 +95,6 @@ behavior-labs-ai runs dual Sentry + OTel, creating redundant cost and complexity
 - **Pyroscope:** Medium priority — profiling is valuable for performance work but not critical for operations
 - **Faro (Frontend RUM):** Low priority — Web Vitals are nice-to-have, not blocking
 - **PostHog Recordings:** Low priority — already available in PostHog, just needs enabling
-- **Source maps in MinIO:** Medium priority — needed for readable stack traces in Loki
+- **Source maps in SeaweedFS:** Medium priority — needed for readable stack traces in Loki
 
 **Recommendation:** Do Phase 1-2 as a focused sprint. Phase 3 items can be tackled independently over time. Pyroscope and source maps first, Faro and recordings later.

@@ -10,7 +10,7 @@ All shared infrastructure is managed in [dk-alchemy](https://github.com/data-kin
 |-----------|-----------|---------|
 | **[PostgreSQL](https://www.postgresql.org/docs/)** | CloudNativePG (PG 16.4) | 3-instance cluster with pod anti-affinity (`topology.kubernetes.io/zone`). Extensions: uuid-ossp, pg_trgm, vector, age. Custom image `ghcr.io/data-kinetic/dk-alchemy/postgres-cnpg:latest`. 50Gi on `local-path-fast` (NVMe). Backups not yet configured. |
 | **[Redis](https://redis.io/docs/)** | Redis 7 (Alpine) | Single StatefulSet, AOF persistence, LRU eviction (256MB max), 10Gi on `local-path-fast` |
-| **[MinIO](https://min.io/docs/minio/linux/index.html)** | MinIO (single-replica) | Object storage for assets and backups, version RELEASE.2024-01-18, 10Gi PVC |
+| **[SeaweedFS](https://github.com/seaweedfs/seaweedfs)** | SeaweedFS (distributed) | S3-compatible object storage for assets and backups. Replacing MinIO (maintenance mode Dec 2025). Apache 2.0 licensed. See [dk-planning#9](https://github.com/data-kinetic/dk-planning/issues/9). |
 | **[OpenSearch](https://opensearch.org/docs/latest/)** | OpenSearch | Full-text search, log analytics |
 
 ## Networking & Edge
@@ -96,7 +96,7 @@ Full list of infrastructure components managed via `dk-infrastructure` Applicati
 | kube-state-metrics | infra | K8s object metrics |
 | loki | infra | Log aggregation (500Gi) |
 | mimir | infra | Metrics storage (200Gi) |
-| minio | infra | Object storage |
+| seaweedfs | infra | S3-compatible object storage (replacing MinIO — [dk-planning#9](https://github.com/data-kinetic/dk-planning/issues/9)) |
 | namespaces | — | Tenant namespace definitions |
 | opensearch | infra | Search engine |
 | postgres | infra | CloudNativePG cluster |
@@ -127,5 +127,5 @@ Full list of infrastructure components managed via `dk-infrastructure` Applicati
 - [Self-Hosted Runners & Webhook Service](self-hosted-runners-and-webhooks.md) — planned ARC runners (not yet deployed)
 - [LiteLLM](litellm.md) — LLM proxy service
 - [Platform API](platform-api.md) — dk-alchemy unified control plane
-- [PR Review Service](pr-review-service.md) — PR critic service running on lithium-5 (krang GPUs)
+- [PR Review Service](pr-review-service.md) — PR critic service running on DK-OS agent-mesh (krang GPUs)
 - [Disaster Recovery](disaster-recovery.md) — backup and restore for data stores
