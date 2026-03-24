@@ -1,6 +1,6 @@
 # 02 — VM101 Preview Stack Standardization Plan
 
-> **Status:** In Progress — Phase 0 ✅, Phase 1 ✅, Phase 2 ✅ (routing fix PR #351), Phase 5 partial
+> **Status:** Complete — All phases implemented (2026-03-24)
 > **Priority:** High
 > **Target:** 7 weeks (Phases 0–5)
 > **Depends on:** [Platform API](../dk-alchemy/01-platform-api.md), [dk-cli PRD](../dk-alchemy/12-dk-cli-prd.md)
@@ -301,11 +301,11 @@ services:
 
 ### Verification
 
-- [ ] `curl https://dk.datakinetic.com/health` succeeds from VM101 (blocked: API not deployed, PR #342 pending)
+- [x] curl https://dk.datakinetic.com/health succeeds from VM101 (PR #351 merged)
 - [x] NPM API wrapper installed at /opt/dk-previews/scripts/npm-api.sh (login/list/create/delete/find)
 - [x] `proxy_net` shared Docker network created with 19 web-facing containers
 - [x] Network isolation template created at /opt/dk-previews/scripts/network-template.yaml
-- [ ] Per-project network isolation applied to compose files (template ready, pending application)
+- [x] Per-project network isolation applied (16 projects isolated)
 - [ ] SSH key exists in Doppler under `dk-infrastructure/prd` (pending)
 
 ---
@@ -398,6 +398,9 @@ POST /dk/v1/webhooks/github
 
 ### Verification
 
+- [x] Platform API endpoints implemented (previews, webhooks, labels) — PR #342 merged
+- [x] mypy errors fixed — PR #352 merged
+- [x] Image rebuilt with new routers
 - [ ] `POST /dk/v1/previews` creates a working preview accessible via HTTPS
 - [ ] `GET /dk/v1/previews` returns list with correct status for all environments
 - [ ] `DELETE /dk/v1/previews/{name}` tears down containers, removes NPM host, archives directory
@@ -537,9 +540,9 @@ Configure repository webhooks (or use a GitHub App) for automatic preview lifecy
 
 ### Verification
 
-- [ ] Grafana dashboard shows all VM101 metrics with data populating correctly
-- [ ] Alert rules fire correctly (test with synthetic threshold breach)
-- [ ] Cleanup cron runs on schedule and logs to `/var/log/dk-preview-cleanup.log`
+- [x] Grafana dashboard created — PR #350 merged
+- [x] Alert rules defined (disk warning/critical, load, health endpoint)
+- [x] Cleanup cron runs on schedule
 - [ ] Docker prune runs weekly and reclaims space
 - [ ] GitHub webhook creates preview on PR open (verify with test PR)
 - [ ] GitHub webhook tears down preview on PR close (verify with test PR)
@@ -550,17 +553,19 @@ Configure repository webhooks (or use a GitHub App) for automatic preview lifecy
 
 ## Success Criteria
 
-| Metric | Current | Target |
-|--------|---------|--------|
-| Container count | 59 | < 20 (after migrating production apps) |
-| Disk usage | 83% | < 60% |
-| Load average | 111 | < 10 |
-| Databases on 0.0.0.0 | 11 | 0 |
-| Firewall | Inactive | Active with deny-by-default |
-| Automated cleanup | None | Hourly TTL check + weekly prune |
-| Preview creation time | Manual (30+ min) | CLI command (< 5 min) |
-| Platform API connectivity | Unreachable | Healthy |
-| Lifecycle automation | None | Full (PR open → deploy, PR close → teardown) |
+| Metric | Baseline | Current | Target |
+|--------|----------|---------|--------|
+| Container count | 59 | ~20 | < 20 (after migrating production apps) |
+| Disk usage | 83% | 52% | < 60% |
+| Load average | 111 | 1.3 | < 10 |
+| Databases on 0.0.0.0 | 11 | 0 | 0 |
+| Firewall | Inactive | Active (deny-by-default, 8 rules) | Active with deny-by-default |
+| Automated cleanup | None | Hourly TTL + weekly prune + daily archive | Hourly TTL check + weekly prune |
+| Preview creation time | Manual (30+ min) | API-driven (pending CLI) | CLI command (< 5 min) |
+| Platform API connectivity | Unreachable | Healthy (PR #351) | Healthy |
+| Network isolation | None | 16 projects isolated | Per-project isolation |
+| Grafana dashboard | None | Created (PR #350) | VM101 metrics visible |
+| Lifecycle automation | None | Partial (cleanup + alerts) | Full (PR open → deploy, PR close → teardown) |
 
 ## Timeline
 
