@@ -39,7 +39,7 @@ This directory contains prioritized plans to align the current state with dk-pla
 | 04 | [Network & Edge](04-network-and-edge.md) | P2 | Medium | Partial — edge failover verified (Mar 2026), VRRP monitoring pending | #294, #251, spec-009 |
 | 05 | [Storage Optimization](05-storage-optimization.md) | P1 | High | **COMPLETE** — nvfast at 9%, PVC placement correct (staging MinIO storage class TBD) | spec-007 |
 | 06 | [VM Lifecycle](06-vm-lifecycle.md) | P3 | Low | Backlog | spec-013 |
-| 07 | [Proxmox Monitoring](07-proxmox-monitoring.md) | P1 | High | Not Started — hypervisor metrics blind spot, SOC 2 CC7.2 gap | — |
+| 07 | [Proxmox Monitoring](07-proxmox-monitoring.md) | P1 | High | **COMPLETE** — node_exporter on penguin+krang, pve-exporter on penguin, DCGM in vllm-minimax VM | — |
 
 ## Dependency Graph
 
@@ -106,7 +106,7 @@ dk-clusters/
 | disaster-recovery.md | No sentinel probe | 03 | Open — SSH blocker |
 | infrastructure.md | Edge LB venom status | 04 | **RESOLVED** — edge failover verified Mar 2026 |
 | platform-overview.md | VM naming inconsistent | 06 | Open — backlog |
-| observability.md | No hypervisor/GPU metrics | 07 | Open — node_exporter, pve-exporter, DCGM not deployed |
+| observability.md | No hypervisor/GPU metrics | 07 | **RESOLVED** — node_exporter, pve-exporter, DCGM deployed |
 
 ## Alignment with dk-alchemy Specs
 
@@ -133,6 +133,7 @@ dk-clusters/
 | 2026-03-23 | Stale pods cleaned | 132 Failed pods removed across all namespaces |
 | 2026-03-23 | Grafana dashboards added | Edge VRRP + Storage Capacity dashboards, 4 alert rules |
 | 2026-03-23 | keepalived_exporter added | Sidecar + Alloy scrape targets for VRRP metrics |
+| 2026-03-24 | Plan 07 complete | node_exporter on penguin+krang (:9100), pve-exporter on penguin (:9221), DCGM in vllm-minimax VM (:9400). GPU passthrough to VM 220 required Docker deployment. |
 
 ## Related Plans
 

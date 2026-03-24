@@ -79,19 +79,19 @@ The Proxmox hosts (penguin, krang) are the foundation of all platform infrastruc
     - `ProxmoxResourceOvercommit`: total allocated CPU/RAM > host capacity — warning
 
 ### Phase 3: GPU Metrics (DCGM Exporter)
-11. Deploy [NVIDIA DCGM Exporter](https://github.com/NVIDIA/dcgm-exporter) on krang:
-    - Runs on bare metal (not in K3s) since GPUs are passed through to vllm-minimax VM
-    - Alternative: deploy inside vllm-minimax VM if GPU passthrough prevents host-level DCGM
+11. Deploy [NVIDIA DCGM Exporter](https://github.com/NVIDIA/dcgm-exporter) inside vllm-minimax VM (192.168.10.101):
+    - All 8× A100 GPUs are PCI-passthrough to vllm-minimax VM (220) — not visible to krang host OS
+    - DCGM exporter runs as a Docker container inside the VM alongside vLLM
     - Listen on :9400
     - Metrics: DCGM_FI_DEV_GPU_UTIL, DCGM_FI_DEV_MEM_COPY_UTIL, DCGM_FI_DEV_GPU_TEMP, DCGM_FI_DEV_ECC_DBE_VOL_TOTAL, DCGM_FI_DEV_POWER_USAGE
 12. Add static scrape target to Alloy:
     ```yaml
     - job_name: nvidia-gpu
       targets:
-        - 192.168.10.100:9400  # krang (or vllm-minimax VM IP)
+        - 192.168.10.101:9400  # vllm-minimax VM (GPUs are PCI-passthrough)
       labels:
         cluster: proxmox
-        host: krang
+        host: vllm-minimax
     ```
 13. Create Grafana dashboard: `grafana/dashboards/infrastructure/gpu-utilization.json`
     - Panels: per-GPU utilization (8 GPUs), GPU memory usage, temperature heatmap, power consumption, ECC error count, utilization over time (7-day trend)
@@ -107,7 +107,7 @@ The Proxmox hosts (penguin, krang) are the foundation of all platform infrastruc
 ## dk-clusters Changes
 - CREATE: `scripts/install-node-exporter.sh` — idempotent installer
 - CREATE: `scripts/install-pve-exporter.sh` — pve-exporter setup with Doppler token
-- CREATE: `scripts/install-dcgm-exporter.sh` — DCGM exporter for krang
+- CREATE: `scripts/install-dcgm-exporter.sh` — DCGM exporter Docker deployment for vllm-minimax VM
 - CREATE: `configs/node-exporter/` — systemd unit files for both hosts
 - CREATE: `configs/pve-exporter/` — configuration for Proxmox API access
 - CREATE: `configs/dcgm-exporter/` — DCGM configuration
@@ -133,7 +133,4 @@ The Proxmox hosts (penguin, krang) are the foundation of all platform infrastruc
 
 ## Options/Recommendations
 **DCGM Exporter Placement:**
-- **Option A: Bare metal on krang** — Direct access to GPU metrics. Works if GPUs are visible to the host OS.
-- **Option B (Fallback): Inside vllm-minimax VM (220)** — Required if all 8 GPUs are fully passed through to the VM and invisible to the host. DCGM runs inside the VM alongside vLLM.
-
-**Recommendation:** Try Option A first. If `nvidia-smi` on krang host returns nothing (GPUs fully passed through), fall back to Option B and scrape from the VM IP instead.
+- **Option B (chosen): Inside vllm-minimax VM (220)** — All 8× A100 GPUs are fully PCI-passthrough to the VM; `nvidia-smi` on krang host returns nothing. DCGM exporter runs as a Docker container inside the VM alongside vLLM, exposing metrics on :9400.

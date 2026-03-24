@@ -22,7 +22,7 @@ These plans bridge the gap between the [dk-planning documentation](../../docs/) 
 | 10 | [Migrations](10-migrations.md) | Not Started | All phases (**has mandatory safety gates**) | Target repo readiness (11) |
 | 11 | [ArgoCD Onboarding Scaffolds](11-argocd-onboarding-scaffolds.md) | Not Started | Regenerate scaffolds, submit PRs | 10 (unblocks migrations) |
 | 12 | [dk-cli PRD](12-dk-cli-prd.md) | Not Started | All phases | 01 (Platform API), 08 (Preview) |
-| 13 | [Cost & Utilization](13-cost-and-utilization.md) | Not Started | LLM cost dashboard, K8s efficiency, unified cost view | Phases 1-2: None. Phase 3: dk-clusters/07 |
+| 13 | [Cost & Utilization](13-cost-and-utilization.md) | **Partial** — Phases 1-2 dashboards deployed, Phase 3 GPU data now flowing | Unified cost overview dashboard, weekly Slack report | Phase 3: dk-clusters/07 (now complete) |
 
 ## Dependency Graph
 

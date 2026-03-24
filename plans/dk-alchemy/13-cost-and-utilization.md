@@ -20,6 +20,7 @@ The platform runs significant infrastructure — 8x A100 GPUs on krang, LiteLLM 
 - dk-alchemy: cAdvisor/KSM metrics in Mimir (pod resource usage)
 - dk-alchemy: `grafana/alerts/litellm.yaml` — includes `LiteLLMBudgetExceeded` alert
 - dk-planning docs: [litellm.md](../../docs/litellm.md) (virtual keys, budgets), [observability.md](../../docs/observability.md) (Alloy collection)
+- **Phases 1-2 dashboards and alerts are now deployed** (merged to dk-alchemy main). Phase 3 GPU/VM data is now flowing via [dk-clusters/07](../dk-clusters/07-proxmox-monitoring.md) (node_exporter, pve-exporter, DCGM exporter all operational).
 
 ## Implementation Steps
 
