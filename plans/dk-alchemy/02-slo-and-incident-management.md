@@ -21,6 +21,24 @@ See `../../docs/incident-management.md` for the full incident management design 
 
 - None (this is foundational infrastructure)
 
+## Current State (audited 2026-03-23)
+
+> **Phase 1 is COMPLETE.** Recording rules, SLO alerts, and overview dashboard are deployed on dk-alchemy main.
+> Before executing remaining phases, verify current state. Use UPDATE semantics for existing files.
+
+**Implemented (on main as of `ed6b0ea`):**
+- `k8s/infrastructure/mimir/base/recording-rules.yaml` — SLI recording rules deployed
+- `grafana/dashboards/slo/slo-overview.json` — SLO overview dashboard with budget, burn rates, availability
+- `grafana/alerts/slo.yaml` — Multi-window burn-rate alerts (14.4x fast, 6x slow, 1x steady)
+
+**Validation findings:**
+- VALIDATED: Window sizes match plan (5m, 30m, 1h, 6h, 3d)
+- VALIDATED: Multi-window burn-rate alert thresholds correct
+- GAP: Recording rules use generic 99.5% target — not differentiated per service (behavior-labs-app needs 99.9%, LiteLLM 99.0%, edge LBs 99.99%)
+- GAP: Edge LBs (Traefik) 99.99% SLO is in alerts but not properly reflected in recording rules
+- GAP: Latency SLOs (P95 < 1s for behavior-labs-api) not implemented — only error ratio rules exist
+- GAP: `slo-detail.json` per-service dashboard NOT created (only slo-overview.json exists)
+
 ## Existing Work
 
 - **dk-alchemy:** `grafana/dashboards/slo/` folder exists (empty, has README only)
@@ -170,10 +188,11 @@ See `../../docs/incident-management.md` for the full incident management design 
 
 | Action | Path | Description |
 |--------|------|-------------|
-| CREATE | `k8s/infrastructure/mimir/base/recording-rules.yaml` | Mimir recording rules for SLI computation |
-| CREATE | `grafana/dashboards/slo/slo-overview.json` | All-SLOs-at-a-glance dashboard |
-| CREATE | `grafana/dashboards/slo/slo-detail.json` | Per-service SLO deep dive dashboard |
-| CREATE | `grafana/alerts/slo.yaml` | Multi-window burn-rate alert rules |
+| ~~DONE~~ | `k8s/infrastructure/mimir/base/recording-rules.yaml` | ✅ Deployed (needs per-service SLO target differentiation) |
+| ~~DONE~~ | `grafana/dashboards/slo/slo-overview.json` | ✅ Deployed |
+| CREATE | `grafana/dashboards/slo/slo-detail.json` | Per-service SLO deep dive dashboard (NOT yet created) |
+| ~~DONE~~ | `grafana/alerts/slo.yaml` | ✅ Multi-window burn-rate alerts deployed |
+| UPDATE | `k8s/infrastructure/mimir/base/recording-rules.yaml` | Fix: differentiate SLO targets per service, add latency SLI rules |
 | CREATE | `k8s/infrastructure/grafana-oncall/base/` | OnCall engine deployment |
 | CREATE | `k8s/infrastructure/grafana-oncall/overlays/prod/` | Production config + DopplerSecret |
 | CREATE | `k8s/infrastructure/argocd-notifications/base/` | Notification controller config |

@@ -18,6 +18,29 @@ See `../../docs/platform-api.md` for the full API specification and `../../docs/
 
 - None (this is the foundation for other workstreams)
 
+## Current State (audited 2026-03-23)
+
+> **WARNING:** Many items below were originally marked CREATE but now exist on dk-alchemy main.
+> Before executing any phase, verify the current state of listed files. Use UPDATE semantics, not CREATE.
+
+**Implemented (on main as of `ed6b0ea`):**
+- `src/platform-api/` — Full FastAPI app with routers: health, labels, llm, previews, webhooks. Auth middleware with `dk_` token validation, RBAC scaffold, webhook HMAC-SHA256.
+- `k8s/infrastructure/platform-api/` — deployment, service, configmap, doppler-secret, service-account (base + prod overlay)
+- `k8s/edge/routes/base/platform-api.yaml` — Edge route configured
+- `.github/workflows/build-platform-api.yaml` — CI build workflow
+
+**Validation findings:**
+- VALIDATED: 4/5 endpoint groups fully implemented (not stubs) — llm, previews, webhooks, labels all have real logic
+- VALIDATED: Auth middleware works — `dk_` token validation, webhook HMAC-SHA256
+- GAP: `/dk/v1/probes/*` endpoint group NOT implemented (no probes router file)
+- GAP: Rate limiting not implemented (plan Phase 2 step 4)
+- GAP: RBAC token-to-role mapping stubbed — all valid `dk_` tokens get DEVELOPER role
+- GAP: `grafana/dashboards/infrastructure/platform-api.json` NOT created
+- GAP: `grafana/alerts/platform-api.yaml` NOT created
+- GAP: `docs/platform-api-integration-guide.md` NOT created
+- MISMATCH: Plan says `overlays/prod/doppler-secret.yaml` but actual has it in `base/doppler-secret.yaml`
+- MISMATCH: Plan doesn't mention `service-account.yaml` which exists in `base/`
+
 ## Existing Work
 
 - **dk-alchemy specs:** None directly (webhook service was planned but never spec'd)
@@ -108,13 +131,15 @@ See `../../docs/platform-api.md` for the full API specification and `../../docs/
 
 | Action | Path | Description |
 |--------|------|-------------|
-| CREATE | `src/platform-api/` | Entire FastAPI service (source, tests, Dockerfile, pyproject.toml) |
-| CREATE | `k8s/infrastructure/platform-api/base/` | Deployment, Service, ConfigMap, Kustomization |
-| CREATE | `k8s/infrastructure/platform-api/overlays/prod/` | Kustomization, DopplerSecret |
-| CREATE | `k8s/edge/routes/base/platform-api.yaml` | Edge route for dk.datakinetic.com |
+| ~~DONE~~ | `src/platform-api/` | ✅ FastAPI service deployed (health, labels, llm, previews, webhooks) |
+| ~~DONE~~ | `k8s/infrastructure/platform-api/base/` | ✅ Deployment, Service, ConfigMap, DopplerSecret, ServiceAccount |
+| ~~DONE~~ | `k8s/infrastructure/platform-api/overlays/prod/` | ✅ Production overlay |
+| ~~DONE~~ | `k8s/edge/routes/base/platform-api.yaml` | ✅ Edge route for dk.datakinetic.com |
+| ~~DONE~~ | `.github/workflows/build-platform-api.yaml` | ✅ CI build workflow |
+| CREATE | `src/platform-api/.../routers/probes.py` | Probes endpoint group (Phase 6 step 8) |
+| UPDATE | `src/platform-api/.../auth/tokens.py` | Add rate limiting middleware, wire RBAC to Doppler token store |
 | CREATE | `grafana/dashboards/infrastructure/platform-api.json` | Request metrics dashboard |
 | CREATE | `grafana/alerts/platform-api.yaml` | Alert rules for error rate, latency, downstream health |
-| CREATE | `.github/workflows/build-platform-api.yaml` | CI build workflow |
 | CREATE | `docs/platform-api-integration-guide.md` | Integration guide for consumers |
 
 ## Verification

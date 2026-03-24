@@ -14,6 +14,23 @@ behavior-labs-ai runs dual Sentry + OTel, creating redundant cost and complexity
 - Grafana Faro requires Alloy configuration changes (dk-alchemy)
 - Pyroscope requires new infrastructure component (dk-alchemy)
 
+## Current State (audited 2026-03-23)
+
+> **dk-alchemy-side Phase 1 artifacts are COMPLETE.** Error tracking dashboard and alerts deployed.
+> Sentry removal (Phase 2) and advanced features (Phase 3) target behavior-labs-ai, not dk-alchemy.
+
+**Implemented (on main as of `b94c4fa`):**
+- `grafana/dashboards/applications/error-tracking.json` — 8-panel dashboard (rate, volume, type, endpoint, temporal, drill-down)
+- `grafana/alerts/error-tracking.yaml` — 4 LogQL alerts (high error rate, new error type, spike detection, critical volume)
+
+**Validation findings:**
+- VALIDATED: All 4 alerts use LogQL targeting `{namespace=~"behaviorlabs-.*"}`
+- VALIDATED: Dashboard covers ~70% of Sentry Phase 1 error tracking features
+- VALIDATED: Error spike detection mirrors Sentry spike protection (3x baseline over 5m vs 1h)
+- GAP: Error grouping less precise than Sentry fingerprinting (uses log pattern extraction vs exception type)
+- GAP: No breadcrumbs, session tracking, or source map resolution (deferred to Phase 3)
+- NOTE: Phase 3 features (Pyroscope, Faro, PostHog) are dk-alchemy infrastructure additions
+
 ## Existing Work
 - dk-alchemy: No Sentry-related infra (Sentry is SaaS)
 - dk-planning docs: application-instrumentation.md (3-phase plan, overlap analysis)
@@ -59,11 +76,11 @@ behavior-labs-ai runs dual Sentry + OTel, creating redundant cost and complexity
 18. Add OTel release tracking attributes (replaces Sentry Releases)
 
 ## dk-alchemy Changes
-- CREATE: k8s/infrastructure/pyroscope/ (base + prod overlay)
-- MODIFY: k8s/infrastructure/alloy/base/values.yaml (add Faro receiver)
-- CREATE: grafana/dashboards/applications/error-tracking.json
-- CREATE: grafana/alerts/error-tracking.yaml
-- MODIFY: grafana/provisioning/alerting/ (mirror Sentry rules)
+- CREATE: k8s/infrastructure/pyroscope/ (base + prod overlay) — Phase 3
+- MODIFY: k8s/infrastructure/alloy/base/values.yaml (add Faro receiver) — Phase 3
+- ~~DONE~~: grafana/dashboards/applications/error-tracking.json ✅
+- ~~DONE~~: grafana/alerts/error-tracking.yaml ✅
+- MODIFY: grafana/provisioning/alerting/ (mirror Sentry rules) — Phase 1 in-progress
 
 ## Verification
 - All Sentry alert equivalents fire correctly in Grafana

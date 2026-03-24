@@ -3,6 +3,30 @@
 ## Context
 6 single-purpose repos are being consolidated into 3 platforms + 1 fabric. Each migration moves services, databases, and GitOps config from a deprecated repo into its target. dk-alchemy needs cleanup after each migration (remove external app bootstraps, namespaces, DopplerSecrets).
 
+## ⚠️ SAFETY GATE — MANDATORY PRE-DELETION CHECKLIST
+
+> **This plan includes DELETE operations on live `.gitops/external/` and `.gitops/repositories/` files.**
+> These files control ArgoCD-managed production applications. Deleting them prematurely will cause
+> ArgoCD to delete the running applications and their resources from the cluster.
+>
+> **Before ANY deletion of gitops bootstrap files, ALL of the following must be verified:**
+>
+> 1. [ ] All services verified running and healthy in the TARGET repo (not the deprecated one)
+> 2. [ ] ArgoCD sync healthy on new applications in target repo — `Healthy/Synced` status
+> 3. [ ] DNS/routes updated to point to new deployments (edge routes, IngressRoutes)
+> 4. [ ] Monitoring dashboards updated to show data from new service names/namespaces
+> 5. [ ] **48-hour burn-in period passed** after target services are running in production
+> 6. [ ] Rollback plan documented and tested — can re-apply deleted gitops files within 5 minutes
+> 7. [ ] Database migration verified — no data loss, queries returning expected results
+> 8. [ ] No active incidents or ongoing deploys in either source or target repos
+> 9. [ ] Doppler secrets verified serving correctly in target repo namespaces before removing deprecated DopplerSecret references
+> 10. [ ] Deprecated repo CI/CD pipelines disabled (prevent race condition where a push re-triggers deploy during cutover)
+>
+> **Rollback procedure:** If deletion causes issues, immediately `git revert` the deletion commit
+> and push to main. ArgoCD will re-sync and recreate the applications within its sync interval
+> (default: 3 minutes, configured in `argocd-cm` ConfigMap `timeout.reconciliation`).
+> Verify rollback by checking `argocd app list` for the restored applications within 5 minutes.
+
 ## Scope
 - dk-phantom → DK-OS (smallest, recommended first)
 - dk-mercury → DK-OS

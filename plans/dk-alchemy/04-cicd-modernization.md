@@ -18,10 +18,31 @@ See `../../docs/ci-cd-pipelines.md` for the pipeline design, `../../docs/standar
 
 - None (independent workstream, but unlocks Plan 03 shift-left: CI catches violations before Kyverno blocks them at admission time)
 
+## Current State (audited 2026-03-23)
+
+> **Phase 3 (ARC runners) is COMPLETE.** All 3 runner classes deployed with correct specs.
+> Note: Implementation went runners-first (Option A), not shared-workflows-first (Option B recommended).
+> Before executing remaining phases, verify current state.
+
+**Implemented (on main as of `07e5c6a`):**
+- `k8s/infrastructure/arc-controller/base/` + `overlays/prod/` — ARC controller Helm chart v0.9.3
+- `k8s/infrastructure/arc-runners/base/` — All 3 runner classes (standard, large, gpu)
+- `grafana/dashboards/infrastructure/arc-runners.json` — Runner metrics dashboard
+
+**Validation findings:**
+- VALIDATED: runner-standard: 2-4 CPU, 4-8 Gi, max 10 replicas, penguin node affinity
+- VALIDATED: runner-large: 8-16 CPU, 32-64 Gi, max 5 replicas, penguin node affinity
+- VALIDATED: runner-gpu: 4-8 CPU, 16-32 Gi + 1 GPU, max 4 replicas, krang node affinity
+- VALIDATED: DinD sidecars configured on all runners with shared Docker socket volumes
+- VALIDATED: Dashboard exists with runner metrics
+- GAP: `grafana/alerts/arc-runners.yaml` NOT created (plan step 16)
+- GAP: Shared org-level workflows NOT created (Phase 1-2)
+- GAP: Renovate NOT configured (Phase 4)
+
 ## Existing Work
 
 - **dk-alchemy specs:** `001-argocd-lifecycle-scripts` (operational scripts pattern)
-- **dk-alchemy:** `.github/workflows/` has 10 workflows (validation, builds, Grafana sync)
+- **dk-alchemy:** `.github/workflows/` has 12 workflows (validation, builds, Grafana sync)
 - **dk-alchemy issues:** #27 (CI/CD gaps), #28 (image signing in CI)
 - **dk-planning docs:** `../../docs/ci-cd-pipelines.md`, `../../docs/standards-compliance.md`, `../../docs/self-hosted-runners-and-webhooks.md`
 
@@ -211,12 +232,12 @@ See `../../docs/ci-cd-pipelines.md` for the pipeline design, `../../docs/standar
 
 | Action | Path | Description |
 |--------|------|-------------|
-| CREATE | `k8s/infrastructure/arc-controller/base/` | ARC controller Helm chart |
-| CREATE | `k8s/infrastructure/arc-controller/overlays/prod/` | Production overrides |
-| CREATE | `k8s/infrastructure/arc-runners/base/` | AutoscalingRunnerSets for 3 runner classes |
-| CREATE | `k8s/infrastructure/arc-runners/overlays/prod/` | Production runner config |
-| CREATE | `grafana/dashboards/infrastructure/arc-runners.json` | Runner metrics dashboard |
-| CREATE | `grafana/alerts/arc-runners.yaml` | Runner scaling and health alerts |
+| ~~DONE~~ | `k8s/infrastructure/arc-controller/base/` | ✅ ARC controller Helm chart v0.9.3 |
+| ~~DONE~~ | `k8s/infrastructure/arc-controller/overlays/prod/` | ✅ Production overrides |
+| ~~DONE~~ | `k8s/infrastructure/arc-runners/base/` | ✅ All 3 runner classes (standard, large, gpu) |
+| ~~DONE~~ | `k8s/infrastructure/arc-runners/overlays/prod/` | ✅ Production runner config |
+| ~~DONE~~ | `grafana/dashboards/infrastructure/arc-runners.json` | ✅ Runner metrics dashboard |
+| CREATE | `grafana/alerts/arc-runners.yaml` | Runner scaling and health alerts (NOT yet created) |
 | MODIFY | `.github/workflows/*.yaml` | Migrate to shared reusable workflow |
 
 ## dk-org Changes (data-kinetic/.github)

@@ -2,62 +2,70 @@
 
 ## Overview
 
-These plans bridge the gap between the [dk-planning documentation](../../docs/) (target state) and the current dk-alchemy implementation. They organize 74 identified gaps into 10 actionable workstreams with clear sequencing, dependencies, and priorities.
+These plans bridge the gap between the [dk-planning documentation](../../docs/) (target state) and the current dk-alchemy implementation. They organize 74 identified gaps into 12 actionable workstreams with clear sequencing, dependencies, and priorities.
 
 ## Priority Matrix
 
-| # | Plan | Priority | Effort | Impact | Dependencies |
-|---|------|----------|--------|--------|-------------|
-| 01 | [Platform API](01-platform-api.md) | High | Large | High | None |
-| 02 | [SLO & Incident Management](02-slo-and-incident-management.md) | High | Large | Critical | None |
-| 03 | [Security Hardening](03-security-hardening.md) | High | Medium | High | 04 (shift-left first) |
-| 04 | [CI/CD Modernization](04-cicd-modernization.md) | High | Large | High | None |
-| 05 | [Sentry Migration](05-sentry-migration.md) | High | Medium | Medium | 06 (package extraction) |
-| 06 | [Shared Observability Package](06-shared-observability-package.md) | High | Small | High | None |
-| 07 | [Secrets Lifecycle](07-secrets-lifecycle.md) | Medium | Small | Medium | 02 (alert routing) |
-| 08 | [Preview Standardization](08-preview-standardization.md) | Medium | Medium | Medium | 01 (API endpoints) |
-| 09 | [Governance Extraction](09-governance-extraction.md) | Medium | Medium | Medium | 01 (label endpoints) |
-| 10 | [Migrations](10-migrations.md) | High | Large | High | Target repo readiness |
-| 11 | [ArgoCD Onboarding Scaffolds](11-argocd-onboarding-scaffolds.md) | High | Small | High | 10 (unblocks migrations) |
+> **Last audited: 2026-03-23** against dk-alchemy main (`ed6b0ea`). Plans 01-07 have been updated to reflect implemented work.
+
+| # | Plan | Status | Remaining Work | Dependencies |
+|---|------|--------|---------------|-------------|
+| 01 | [Platform API](01-platform-api.md) | **Partial** — scaffold + 4/5 routers deployed | Probes router, dashboard, alerts, rate limiting, RBAC wiring, integration guide | None |
+| 02 | [SLO & Incident Management](02-slo-and-incident-management.md) | **Partial** — SLI rules + overview dashboard + burn-rate alerts | Per-service SLO targets, latency SLI rules, slo-detail dashboard, OnCall, ArgoCD notifications, alert-to-issue, DR runbooks | None |
+| 03 | [Security Hardening](03-security-hardening.md) | **Partial** — Kyverno audit mode (6/7 policies) | `require-read-only-rootfs`, Kyverno dashboard, enforce mode, NetworkPolicies, cosign, audit logs | 04 (shift-left first) |
+| 04 | [CI/CD Modernization](04-cicd-modernization.md) | **Partial** — ARC runners (all 3 classes) deployed | Shared workflows, standards enforcement, Renovate, runner alerts | None |
+| 05 | [Sentry Migration](05-sentry-migration.md) | **Partial** — error tracking dashboard + alerts | Sentry SDK removal, Pyroscope, Faro | 06 (package extraction) |
+| 06 | [Shared Observability Package](06-shared-observability-package.md) | **Substantial** — package in dk-alchemy monorepo | Verify publishing, dk-template integration, integration guide | None |
+| 07 | [Secrets Lifecycle](07-secrets-lifecycle.md) | **Substantial** — alerts + runbook created | Alloy Doppler pipeline (blocking), dashboards | 02 (alert routing) |
+| 08 | [Preview Standardization](08-preview-standardization.md) | Minimal | Platform API preview endpoints, templates, TTL cleanup | 01 (API endpoints) |
+| 09 | [Governance Extraction](09-governance-extraction.md) | Not Started | All phases | 01 (label endpoints) |
+| 10 | [Migrations](10-migrations.md) | Not Started | All phases (**has mandatory safety gates**) | Target repo readiness (11) |
+| 11 | [ArgoCD Onboarding Scaffolds](11-argocd-onboarding-scaffolds.md) | Not Started | Regenerate scaffolds, submit PRs | 10 (unblocks migrations) |
+| 12 | [dk-cli PRD](12-dk-cli-prd.md) | Not Started | All phases | 01 (Platform API), 08 (Preview) |
 
 ## Dependency Graph
 
 ```
-Independent foundations (start immediately):
-  01-Platform API ──────────────► 08-Preview Standardization
-                  ──────────────► 09-Governance Extraction
-  02-SLO & Incident ───────────► 07-Secrets Lifecycle
-  04-CI/CD Modernization ──────► 03-Security Hardening
-  06-Shared Observability ─────► 05-Sentry Migration
+Foundation work (PARTIALLY COMPLETE — audited 2026-03-23):
+  01-Platform API ────────[scaffold done]──► 08-Preview Standardization
+                  ────────[scaffold done]──► 09-Governance Extraction
+  02-SLO & Incident ─────[rules done, contact points pending]──► 07-Secrets Lifecycle
+  04-CI/CD Modernization ─[ARC done]──────► 03-Security Hardening
+  06-Shared Observability ─[extracted]────► 05-Sentry Migration
 
-Independent (start when target repos ready):
-  10-Migrations
+Unblocked (can start now — foundation partially in place):
+  03-Security Hardening (Kyverno enforce phases, NetworkPolicies, cosign)
+  07-Secrets Lifecycle (Alloy Doppler pipeline — blocking for alert activation)
+
+Still blocked:
+  08, 09 ◄── Platform API needs to be fully deployed + routed (not just scaffolded)
+  10 ◄────── 11 (scaffolds for target repos) — ⚠️ has mandatory safety gates
+  12 ◄────── 01 + 08 (Platform API + Preview standardization)
 ```
 
-## Recommended Execution Phases
+## Recommended Execution Phases (updated 2026-03-23)
 
-### Phase 1: Foundation (Months 1-2)
-Start these in parallel — they have no dependencies:
-- **01 Platform API** — foundation for previews, labels, webhooks
-- **02 SLO & Incident Management** — defines service health
-- **04 CI/CD Modernization** — standardizes pipelines
-- **06 Shared Observability Package** — small effort, high impact
+### Phase 1: Foundation (Months 1-2) — PARTIALLY COMPLETE
+Foundation work has been started. Remaining items:
+- **01 Platform API** — ✅ Scaffold done. Remaining: probes router, dashboard, alerts, rate limiting
+- **02 SLO & Incident Management** — ✅ Recording rules + alerts done. Remaining: per-service SLO targets, slo-detail dashboard, OnCall, DR
+- **04 CI/CD Modernization** — ✅ ARC runners done. Remaining: shared workflows, standards enforcement, Renovate
+- **06 Shared Observability Package** — ✅ Extraction done. Remaining: verify publishing, dk-template integration
 
-### Phase 2: Core (Months 2-4)
-These depend on Phase 1 foundations:
-- **03 Security Hardening** — Kyverno after CI standards are in place
-- **05 Sentry Migration** — Phase 1-2 after observability package exists
-- **07 Secrets Lifecycle** — after alert routing from Plan 02
-- **08 Preview Standardization** — after Platform API from Plan 01
+### Phase 2: Core (Months 2-4) — NOW PARTIALLY UNBLOCKED
+With foundation work partially in place, these can begin:
+- **03 Security Hardening** — Kyverno audit deployed, can proceed to enforce mode + NetworkPolicies + missing `require-read-only-rootfs` policy
+- **05 Sentry Migration** — dk-alchemy artifacts done, Sentry SDK removal in behavior-labs-ai can proceed
+- **07 Secrets Lifecycle** — Alerts + runbook done, **Alloy Doppler pipeline is the critical blocker** to activate alerts
+- **08 Preview Standardization** — Blocked until Platform API preview endpoints are fully deployed
 
 ### Phase 3: Extended (Months 3-6)
-- **09 Governance Extraction** — after Platform API label endpoints
-- **10 Migrations** — as target repos become ready (dk-phantom first)
+- **09 Governance Extraction** — after Platform API label endpoints are live
+- **10 Migrations** — as target repos become ready (dk-phantom first) — **mandatory safety gates apply**
 - **05 Sentry Migration Phase 3** — Pyroscope, Faro, source maps
 
 ### Phase 4: Future (6+ months)
 Lower-priority items from individual plans:
-- ARC GPU runners on krang
 - Per-PR K8s preview environments
 - Argo Rollouts (progressive delivery)
 - Multi-cluster HA

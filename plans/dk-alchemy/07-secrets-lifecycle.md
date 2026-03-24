@@ -11,7 +11,28 @@ Secrets are rotated ad-hoc with no schedule, no expiry alerting, and no audit tr
 - Document rotation procedures in runbook
 
 ## Dependencies
-- Grafana alert routing (Plan 02 contact points) should be in place for expiry alerts
+- **Plan 02** (SLO & Incident) — Grafana alert routing (contact points) should be in place for expiry alerts
+- **Plan 01** (Platform API) — Phase 4 requires `dk secrets setup` command via Platform API endpoints
+
+## Current State (audited 2026-03-23)
+
+> **Phase 1 (rotation schedules + runbook) and alert rules are COMPLETE.**
+> Alerts are in noData state — Alloy Doppler pipeline not yet deployed.
+
+**Implemented (on main as of `74225b6`):**
+- `grafana/alerts/secrets.yaml` — Rotation alerts at 80%/100% thresholds for 90-day and 180-day secrets + TLS cert expiry
+- `docs/runbooks/secret-rotation.md` — Comprehensive runbook (237 lines) covering all 6 secret types + ArgoCD
+
+**Validation findings:**
+- VALIDATED: Alert thresholds correct — 72d warning / 90d critical (90-day secrets), 144d / 180d (180-day secrets)
+- VALIDATED: TLS cert alerts at 30d warning / 7d critical via cert-manager metrics
+- VALIDATED: All 6 planned secret types covered in alert patterns + ArgoCD (undocumented extra)
+- VALIDATED: Runbook has step-by-step procedures for all secret types with compliance references
+- GAP: Alerts in `noDataState: OK` — Doppler metrics pipeline not deployed (Phase 2 step 4)
+- GAP: `grafana/dashboards/infrastructure/secrets-lifecycle.json` NOT created (plan Phase 2 step 8)
+- GAP: `grafana/dashboards/infrastructure/doppler-audit.json` NOT created (plan Phase 3 step 10)
+- NOTE: Existing `doppler.json` dashboard covers operator health but NOT secret age/rotation status
+- MISMATCH: Implementation includes ArgoCD credentials as a 7th secret type (not listed in plan's 6 types)
 
 ## Existing Work
 - dk-alchemy: Doppler Operator deployed, DopplerSecret CRDs in use
@@ -62,11 +83,11 @@ Secrets are rotated ad-hoc with no schedule, no expiry alerting, and no audit tr
 14. Add secret rotation reminders to weekly governance reports
 
 ## dk-alchemy Changes
-- MODIFY: k8s/infrastructure/alloy/base/values.yaml (add Doppler audit scrape)
-- CREATE: grafana/dashboards/infrastructure/secrets-lifecycle.json
-- CREATE: grafana/dashboards/infrastructure/doppler-audit.json
-- CREATE: grafana/alerts/secrets.yaml (expiry alerts)
-- CREATE: docs/runbooks/secret-rotation.md
+- MODIFY: k8s/infrastructure/alloy/base/values.yaml (add Doppler audit scrape — BLOCKING for alerts to fire)
+- CREATE: grafana/dashboards/infrastructure/secrets-lifecycle.json (NOT yet created)
+- CREATE: grafana/dashboards/infrastructure/doppler-audit.json (NOT yet created)
+- ~~DONE~~: grafana/alerts/secrets.yaml ✅ (deployed, in noData state pending Alloy pipeline)
+- ~~DONE~~: docs/runbooks/secret-rotation.md ✅ (237 lines, comprehensive)
 
 ## Verification
 - Grafana dashboard shows all secrets with age and rotation status

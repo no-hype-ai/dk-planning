@@ -6,10 +6,20 @@ the target repos (DK-OS, carbon-5, lithium-5) lack the `.gitops/`, `k8s/`, and `
 directories required for ArgoCD deployment. This document captures the scaffolding generated
 by `dk-template init.sh` for each target repo.
 
-## Status
-- All three scaffolds generated successfully from dk-template (no placeholder errors)
-- Scaffolds stored at `/tmp/{dk-os,carbon5,lithium5}-scaffold/` for review
+## Current State (audited 2026-03-23)
+
+> **SIGNIFICANT DRIFT — Scaffolds need regeneration. Bootstrap files not yet in dk-alchemy.**
+
+**Status:**
+- Scaffolds were previously generated and stored at `/tmp/` paths — these are **ephemeral and no longer exist**
+- DK-OS, carbon-5, lithium-5 bootstrap files do NOT exist in dk-alchemy's `.gitops/external/` or `.gitops/repositories/`
+- Only the old migration sources (agent-mesh, dk-phantom, dk-mercury, dk-data-fe, behavior-labs-ai, xenon) are registered
 - Issues #319-#322 referenced in migration plan were not found; may need to be created
+
+**To proceed:**
+1. Regenerate scaffolds using the `dk-template init.sh` commands documented below
+2. Submit PRs to target repos (DK-OS, carbon-5, lithium-5)
+3. Submit dk-alchemy PR to add bootstrap files to `.gitops/external/` and `.gitops/repositories/`
 
 ## Important: Existing Workflows
 All three target repos already have `.github/workflows/`. Do NOT overwrite:

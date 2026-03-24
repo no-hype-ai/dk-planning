@@ -18,6 +18,24 @@ See `../../docs/security-and-compliance.md` for the full security design includi
 
 - **Plan 04 (CI/CD Modernization):** Standards compliance checks should be in CI before Kyverno enforces at runtime. This creates a shift-left pattern where developers get CI feedback before admission blocks their deployment. Kyverno audit mode (Phase 1) can proceed independently.
 
+## Current State (audited 2026-03-23)
+
+> **Phase 1 is MOSTLY COMPLETE.** Kyverno deployed in audit mode with 6/7 policies.
+> Before executing remaining phases, verify current state. Policies are in `base/` NOT `policies/`.
+
+**Implemented (on main as of `4549efc`):**
+- `k8s/infrastructure/kyverno/base/` — Kyverno Helm chart + 6 policies in audit mode
+- `k8s/infrastructure/kyverno/overlays/prod/` — Production overlay (currently identical to base)
+
+**Validation findings:**
+- VALIDATED: 6 policies deployed in Audit mode with correct namespace exclusions (arc-system, kube-system, kyverno)
+- VALIDATED: `restrict-image-registries` allows `ghcr.io/data-kinetic/*` + common infra images
+- VALIDATED: `require-labels` checks `team`, `service`, `product` labels
+- VALIDATED: All policies use `validationFailureAction: Audit`
+- **CRITICAL GAP:** `require-read-only-rootfs.yaml` is MISSING (6/7 policies deployed)
+- GAP: `grafana/dashboards/infrastructure/kyverno.json` PolicyReport dashboard NOT created
+- **PATH FIX:** Plan references `k8s/infrastructure/kyverno/policies/` but policies are in `base/` directory
+
 ## Existing Work
 
 - **dk-alchemy issues:** #29 (Kyverno admission controller), #28 (image signing with cosign)
@@ -36,7 +54,7 @@ See `../../docs/security-and-compliance.md` for the full security design includi
 
 2. Deploy Kyverno in **audit mode** (`validationFailureAction: Audit` on all policies)
 
-3. Create cluster policies in `dk-alchemy/k8s/infrastructure/kyverno/policies/`:
+3. Create cluster policies in `dk-alchemy/k8s/infrastructure/kyverno/base/`:
 
    | Policy File | Rule | Description |
    |------------|------|-------------|
@@ -129,7 +147,7 @@ See `../../docs/security-and-compliance.md` for the full security design includi
     - One-time script to pull, sign, and push signatures for current images
     - Verify signatures with `cosign verify`
 
-16. Add Kyverno image verification policy: `dk-alchemy/k8s/infrastructure/kyverno/policies/verify-image-signatures.yaml`
+16. Add Kyverno image verification policy: `dk-alchemy/k8s/infrastructure/kyverno/base/verify-image-signatures.yaml`
     - Verify cosign signature on all images in production namespaces
     - Key: GitHub OIDC issuer for `data-kinetic` org
     - Start in **Audit** mode, move to Enforce after all images are signed
@@ -178,12 +196,13 @@ See `../../docs/security-and-compliance.md` for the full security design includi
 
 | Action | Path | Description |
 |--------|------|-------------|
-| CREATE | `k8s/infrastructure/kyverno/base/` | Helm chart, values, kustomization |
-| CREATE | `k8s/infrastructure/kyverno/policies/` | 7+ ClusterPolicy YAML files |
-| CREATE | `k8s/infrastructure/kyverno/overlays/prod/` | Production overrides |
+| ~~DONE~~ | `k8s/infrastructure/kyverno/base/` | ✅ Helm chart + 6 policies in audit mode |
+| ~~DONE~~ | `k8s/infrastructure/kyverno/overlays/prod/` | ✅ Production overlay |
+| CREATE | `k8s/infrastructure/kyverno/base/require-read-only-rootfs.yaml` | Missing 7th policy |
+| CREATE | `grafana/dashboards/infrastructure/kyverno.json` | Policy violations dashboard (NOT yet created) |
 | CREATE | `k8s/infrastructure/network-policies/` | Production NetworkPolicy manifests per namespace |
-| CREATE | `grafana/dashboards/infrastructure/kyverno.json` | Policy violations dashboard |
 | CREATE | `grafana/dashboards/infrastructure/security-events.json` | Unified audit log dashboard |
+| CREATE | `k8s/infrastructure/kyverno/base/verify-image-signatures.yaml` | cosign verification policy (Phase 5) |
 | MODIFY | `.github/workflows/*.yaml` | Add cosign sign step after GHCR push |
 | MODIFY | `.github/workflows/*.yaml` | Pin all Action `uses:` to commit SHA |
 | MODIFY | `k8s/infrastructure/argocd/` | Enable audit log forwarding to Loki |
