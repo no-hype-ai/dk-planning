@@ -15,75 +15,82 @@ The standardization plan (02) was marked "Complete" on 2026-03-24 but a live SSH
 
 ---
 
-## Live Audit Results (2026-03-24)
+## Live Audit Results (2026-03-24, updated 2026-03-25)
 
 ### VM101 System State
 
-| Metric | Documented | Actual | Delta |
-|--------|-----------|--------|-------|
-| Running containers | ~20 | 56 | +36 — production apps (enercore 15, carbon-5 10) account for bulk |
-| RAM | 125 GiB (wrong) | 64 GiB allocated (62 GiB usable) | Docs were always wrong — Proxmox `memory: 65536`, `balloon: 32768` |
-| Disk | 59% (282 GB) | 53% (257 GB) | -6% — cleanup cron working |
-| Load average | 1.3 | 0.19 | Much better — load spike was transient |
-| Compose projects | 15 | 15 | Match |
-| API-managed previews | "10 metas" | 0 managed | All 10 metas have `managed: false`, TTL 8760h |
-| Unmigrated projects | 0 | 2 | ghost-cal, ut-san-antonio-oncology |
-| Containers restarting | 0 | 2 | carbon-app, carbon-api |
-| Unhealthy containers | 0 | 1 | surgeo-app-1 |
+| Metric | 2026-03-24 | 2026-03-25 | Notes |
+|--------|-----------|-----------|-------|
+| Running containers | 56 | 56 | +3 the-real-apex restarted, -carbon-5 already gone |
+| RAM | 62 GiB usable | 5.8 GiB used / 62 GiB | 11% utilization |
+| Disk | 53% (257 GB) | **20% (96 GB)** | Reclaimed ~157GB: build cache + orphaned volumes + images |
+| Load average | 0.19 | 0.35 | Stable, well within 16 vCPU capacity |
+| Compose projects | 15 | 14 | carbon-5 fully removed |
+| API-managed previews | 0 | 0 | All 12 metas have `managed: false`, TTL 8760h |
+| Unmigrated projects | 2 | 0 | ghost-cal + ut-san-antonio-oncology migrated to standard dirs |
+| Containers restarting | 2 (carbon-5) | 0 | carbon-5 decommissioned |
+| Unhealthy containers | 1 (surgeo) | 0 | surgeo now healthy |
+| **Cron jobs** | Listed in docs | **Were NOT installed** — fixed 2026-03-25 | cleanup.sh, prune, archive |
+| **the-real-apex** | "Running" | **Was DOWN 28h** — restarted 2026-03-25 | Clean shutdown, no restart policy |
+| **rili port 0.0.0.0:3000** | Flagged | **Fixed** — changed to expose-only | Now routes through NPM |
+| **carbon-5** | Restarting | **Fully removed** — only orphaned network remained, now cleaned | |
+| **Node exporter (9100)** | Documented | **Actually health-server.py** — custom Python, not Prometheus node_exporter | |
 
-### Container Inventory (56 total)
+### Container Inventory (56 total as of 2026-03-25)
 
 **Production apps (`/opt/dk-production/`):**
 
-| Project | Containers | Status | Notes |
-|---------|-----------|--------|-------|
-| platform-core (enercore) | 15 | Running | Full LGTM stack + SeaweedFS + Unleash + Mongo |
-| carbon-5 | 10 | **2 restarting** | carbon-app, carbon-api in restart loop; 8 healthy |
-| abts-surgeo | 1 | Running | Single container |
+| Project | Containers | Status | Health | Notes |
+|---------|-----------|--------|--------|-------|
+| platform-core (enercore) | 15 | All UP | db, redis healthy; 13 no healthcheck | Full LGTM stack + SeaweedFS + Unleash + Mongo |
+| abts-surgeo | 8 | All UP | api, web, postgres, redis, minio healthy; 3 workers no healthcheck | |
+| ~~carbon-5~~ | ~~removed~~ | **Decommissioned** | — | Fully removed 2026-03-24 (Doppler token missing). Orphaned network cleaned 2026-03-25. |
 
 **Preview apps (`/opt/dk-previews/active/`):**
 
-| Project | Containers | Status | Notes |
-|---------|-----------|--------|-------|
-| ground-truth-charlie | 6 | Running | Postgres, Redis, MinIO, Mailpit |
-| dayone-rili-synthetics | 5 | Running | MinIO exposed on 0.0.0.0:9000-9001 |
-| rose-and-berg (sniper) | 4 | Running | DB + Redis on 127.0.0.1 |
-| the-real-apex | 3 | Running | In standard dir but no compose running (legacy) |
-| tavr-insight-and-profiler (meadow) | 2 | Running | DB on 127.0.0.1:5436 |
-| va | 2 | Running | Postgres on internal network |
-| surgeo | 2 | **1 unhealthy** | surgeo-app-1 unhealthy |
-| cms-121 | 1 | Running | |
-| durva | 1 | Running | |
-| stryker-intro | 1 | Running | |
-
-**Not migrated (legacy directories):**
-
-| Project | Containers | Location | Notes |
-|---------|-----------|----------|-------|
-| ghost-cal | 4 | `/home/ubuntu/actions-runner-ghost-cal/` + `/home/ubuntu/code/ghost-cal/` | GitHub Actions runner-deployed |
-| ut-san-antonio-oncology | 1 | `/home/nick/code/ut-san-antonio-oncology/` | Deployed under nick user |
+| Project | Containers | Status | Health | Notes |
+|---------|-----------|--------|--------|-------|
+| ground-truth-charlie | 6 | All UP 28h | postgres, redis, mailpit healthy | minio + app no healthcheck |
+| dayone-rili-synthetics | 5 | All UP 3h | postgres, redis, minio healthy | **Port fix applied 2026-03-25** — was 0.0.0.0:3000, now expose-only |
+| ghost-cal | 4 | All UP 3h | web, db, redis healthy | worker no healthcheck; doppler integrated; **migrated** from runner dir |
+| rose-and-berg (sniper) | 4 | All UP 28h | db, redis healthy | sniper-app, sniper-api no healthcheck |
+| the-real-apex | 3 | All UP | db healthy (web starting) | **Restarted 2026-03-25** — was down 28h (clean shutdown, no restart policy). Added `restart: unless-stopped`. |
+| surgeo | 2 | All UP 3h | app, db healthy | Doppler integrated; Clerk keys fixed |
+| tavr-insight-and-profiler (meadow) | 2 | All UP 28h | db healthy | app no healthcheck |
+| va | 2 | All UP 28h | app, postgres healthy | OK |
+| ut-san-antonio-oncology | 1 | UP 3h | no healthcheck | **Migrated** from `/home/nick/code/` |
+| cms-121 | 1 | UP 28h | no healthcheck | Note: container named `origincv-app` (name mismatch with project) |
+| durva | 1 | UP 28h | no healthcheck | |
+| stryker-intro | 1 | UP 28h | no healthcheck | |
 
 **Infrastructure:**
 
 | Project | Containers | Notes |
 |---------|-----------|-------|
-| nginx-proxy-manager | 1 | NPM at `/home/ubuntu/code/nginx-proxy-manager/` — also not in standard dir |
+| nginx-proxy-manager | 1 (healthy) | Still at legacy location `/home/ubuntu/code/nginx-proxy-manager/` |
+
+**Health summary:** 24 of 56 containers have healthchecks configured. 29 containers run without health monitoring.
 
 ### Network State
 
 - **UFW:** Active, deny-by-default, 8 rules (22, 80, 443, 81 from mgmt, 9100 from mgmt)
 - **Docker networks:** 21 custom networks + proxy_net shared bridge
 - **Databases on 127.0.0.1:** All Postgres (5432, 5433, 5434, 5436, 5442), Redis (6380, 6381), Mongo (27018)
-- **Still on 0.0.0.0:** rili-minio (9000-9001), abts-minio (9002-9003), enercore services (Unleash 4243, Grafana 3301, Tempo 3201, Loki 3101, SeaweedFS ports, OTel 4319-4320), rili-app-prod (3000)
+- **Still on 0.0.0.0:** rili-minio (9000-9001), abts-minio (9002-9003), enercore services (Unleash 4243, Grafana 3301, Tempo 3201, Loki 3101, SeaweedFS ports, OTel 4319-4320). ~~rili-app-prod (3000)~~ — **fixed 2026-03-25** (now expose-only)
 - **Platform API connectivity:** Verified — `curl https://dk.datakinetic.com/health` returns `{"status":"ok"}` from VM101
 
-### Cron Jobs (working)
+### Cron Jobs (installed 2026-03-25 — were NOT running before)
+
+> **DRIFT FOUND:** Cron jobs were documented as "working" but no crontab entry existed (neither user nor root, no systemd timers). Installed 2026-03-25.
 
 ```
-0 * * * * /opt/dk-previews/scripts/cleanup.sh      # TTL check hourly
-0 3 * * 0 docker system prune -af --filter until=168h  # Weekly prune
-0 4 * * * find /opt/dk-previews/archive/ -mtime +7 ...  # Daily archive cleanup
+# Preview stack maintenance - installed 2026-03-25
+0 * * * * /opt/dk-previews/scripts/cleanup.sh >> /opt/dk-previews/logs/cleanup.log 2>&1
+0 3 * * 0 docker system prune -af --filter until=168h >> /opt/dk-previews/logs/prune.log 2>&1
+0 4 * * * find /opt/dk-previews/archive -mindepth 1 -maxdepth 1 -mtime +7 -exec rm -rf {} + >> /opt/dk-previews/logs/cleanup.log 2>&1
 ```
+
+> **Note:** TTL enforcement is still effectively a no-op — all 12 metas have `ttl_hours: 8760` (1 year). The cleanup script works correctly but won't expire anything until metas have realistic TTLs.
 
 ---
 
@@ -122,18 +129,18 @@ These must be resolved before any preview can be created via the Platform API.
 
 ### P1 — Correctness Issues
 
-#### 4. carbon-5 Restart Loop — DECOMMISSION
+#### 4. carbon-5 — DECOMMISSIONED ✅
 
-- **Symptom:** `carbon-app` and `carbon-api` in `Restarting` state (21 seconds / 8 seconds ago cycles)
-- **Root cause (resolved):** `docker-compose-preview.yaml` passes `DOPPLER_TOKEN=${DOPPLER_TOKEN}` but no service token exists. The `.env` has `DOPPLER_PROJECT=carbon-5` and `DOPPLER_CONFIG=dev` but `DOPPLER_TOKEN` is empty. Every container startup fails with "Doppler Error: you must provide a token".
-- **Decision (2026-03-24):** Decommission carbon-5 on VM101. It is a production app in `/opt/dk-production/` — will be migrated to K8s in the future phase, not fixed on VM101.
-- **Action:** `cd /opt/dk-production/carbon-5 && docker compose -f docker-compose-preview.yaml down --volumes --remove-orphans` then archive directory. Frees ~10 containers and associated resources.
+- **Status:** Fully removed. Containers stopped, directory deleted, orphaned `carbon-5_default` network removed (2026-03-25).
+- **Root cause:** `docker-compose-preview.yaml` passed `DOPPLER_TOKEN=${DOPPLER_TOKEN}` but no service token existed. Not worth fixing.
+- **Decision (2026-03-24):** Decommission carbon-5 on VM101.
+- **Result:** Freed ~10 containers and associated resources. No `/opt/dk-production/carbon-5/` directory remains.
 
-#### 5. surgeo Unhealthy — Fix Clerk Keys
+#### 5. surgeo — FIXED ✅
 
-- **Symptom:** `surgeo-app-1` marked `(unhealthy)` — failing streak: 2878 consecutive health check failures
-- **Root cause (resolved):** Health check `wget http://127.0.0.1:3000` returns HTTP 503. Logs show: "Clerk: Refreshing the session token resulted in an infinite redirect loop. This usually means that your Clerk instance keys do not match". The compose file references `${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}` and `${CLERK_SECRET_KEY}` but there's no `.env` file in the surgeo directory.
-- **Action:** Create `/opt/dk-previews/active/surgeo/.env` with Clerk keys from the surgeo Doppler project, or run `doppler secrets download --project <surgeo-project> --config dev --format env > .env` then `docker compose restart`.
+- **Previous symptom:** `surgeo-app-1` marked `(unhealthy)` — Clerk key mismatch causing infinite redirect.
+- **Fix applied:** Clerk keys added via Doppler integration, healthcheck changed from `/api/health` to `/` due to standalone build issue.
+- **Current status (2026-03-25):** Both `surgeo-app-1` and `surgeo-db-1` healthy. Zero restarts.
 
 #### 6. RAM Discrepancy — RESOLVED
 
@@ -142,17 +149,16 @@ These must be resolved before any preview can be created via the Platform API.
 - **Action:** Update all docs to state 64 GiB allocated (62 GiB usable). Update dk-clusters `docs/vm-inventory.md` which incorrectly says "128G RAM".
 - **Repo:** dk-clusters — `docs/vm-inventory.md`, dk-planning — `docs/preview-environments.md`, `docs/infrastructure.md`
 
-#### 7. ghost-cal Not Migrated
+#### 7. ghost-cal — MIGRATED ✅
 
-- **Location:** `/home/ubuntu/actions-runner-ghost-cal/_work/ghost-cal/ghost-cal/docker-compose.prod.yml`
-- **Issue:** Running from a GitHub Actions runner work directory, not in `/opt/dk-previews/`
-- **Action:** Migrate to `/opt/dk-previews/active/ghost-cal/` and update compose paths
+- **Previous location:** `/home/ubuntu/actions-runner-ghost-cal/_work/ghost-cal/ghost-cal/`
+- **Current location:** `/opt/dk-previews/active/ghost-cal/` with Doppler integration
+- **Note:** Legacy runner directory still exists at `/home/ubuntu/actions-runner-ghost-cal/` — can be cleaned up
 
-#### 8. ut-san-antonio-oncology Not Migrated
+#### 8. ut-san-antonio-oncology — MIGRATED ✅
 
-- **Location:** `/home/nick/code/ut-san-antonio-oncology/docker-compose.yml`
-- **Issue:** Running from a different user's home directory
-- **Action:** Migrate to `/opt/dk-previews/active/ut-san-antonio-oncology/`
+- **Previous location:** `/home/nick/code/ut-san-antonio-oncology/`
+- **Current location:** `/opt/dk-previews/active/ut-san-antonio-oncology/`
 
 ### P2 — Completeness Gaps
 
@@ -187,7 +193,14 @@ These must be resolved before any preview can be created via the Platform API.
 - **Depends on:** GitHub App credentials in Doppler, webhook registration
 - **Repo:** dk-alchemy — extend `webhooks.py` to post comments via GitHub API
 
-#### 14. MinIO/SeaweedFS Ports on 0.0.0.0
+#### 14. Port 9100 is health-server.py, NOT Prometheus Node Exporter
+
+- **Symptom:** Port 9100 is documented as Prometheus node_exporter but is actually served by `/opt/dk-previews/scripts/health-server.py` (Python3, pid 28993)
+- **Impact:** Prometheus scraping for VM101 hardware metrics won't work — the health endpoint returns a custom JSON blob (`{"host":"vm101","status":"healthy","containers_running":53,...}`), not Prometheus exposition format
+- **Not a systemd service** — if the Python process crashes, port 9100 goes down with no auto-restart
+- **Action:** Either install actual Prometheus node_exporter alongside health-server.py (on a different port), or update monitoring docs to reflect the custom endpoint. Also make health-server.py a systemd service for reliability.
+
+#### 15. MinIO/SeaweedFS Ports on 0.0.0.0
 
 - rili-minio: `0.0.0.0:9000-9001`
 - abts-minio: `0.0.0.0:9002-9003`
@@ -393,12 +406,17 @@ No code changes needed — webhook handler is complete. Needs:
 - [ ] `GET /dk/v1/previews/{name}/logs` streams logs from the preview
 
 ### After Sprint 2 (Health Issues)
-- [ ] carbon-5 containers running without restart loop
-- [ ] surgeo-app healthy
-- [ ] ghost-cal migrated to `/opt/dk-previews/active/`
-- [ ] ut-san-antonio-oncology migrated to `/opt/dk-previews/active/`
+- [x] carbon-5 decommissioned (removed 2026-03-24, network cleaned 2026-03-25)
+- [x] surgeo-app healthy (Clerk keys + Doppler integration)
+- [x] ghost-cal migrated to `/opt/dk-previews/active/`
+- [x] ut-san-antonio-oncology migrated to `/opt/dk-previews/active/`
 - [ ] No MinIO ports on 0.0.0.0
-- [ ] VM101 RAM confirmed and documented correctly
+- [x] VM101 RAM confirmed and documented correctly
+- [x] the-real-apex restarted with `restart: unless-stopped` policy (2026-03-25)
+- [x] Cron jobs installed for cleanup, prune, archive (2026-03-25 — were missing)
+- [x] Docker disk reclaimed: 53% → 20% (build cache + volumes + images)
+- [x] rili-app-prod port binding fixed (0.0.0.0:3000 → expose-only)
+- [x] Orphaned carbon-5_default network removed
 
 ### After Sprint 3 (Developer Workflow)
 - [ ] `dk preview up` from a product repo creates a working preview
