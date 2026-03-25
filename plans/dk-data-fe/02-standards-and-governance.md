@@ -40,7 +40,9 @@ grace_period_until: "2026-06-30"  # Warn-only during initial alignment
 Tier rationale:
 - **Tier 1** (structure): `.gitops/`, `k8s/`, Kustomize overlays, health endpoints — all present
 - **Tier 2** (operations): CI/CD, Doppler, OTel, probes — all present; standards workflow + labels are gaps being closed here
-- **Tier 3** (advanced): SLO dashboards, Grafana provisioned dashboards, Kustomize components — deferred to Plan 04 and carbon-5 migration
+- **Tier 3** (advanced): SLO dashboards, Grafana provisioned dashboards, Kustomize components — deferred to Plan 04
+
+**Note:** Adopt cosign image signing when dk-alchemy/03 Phase 3 (supply chain security) ships. Add SBOM generation to `build-push.yaml` workflow at that time.
 
 ### Step 2: Add `standards.yaml` Workflow
 
@@ -117,7 +119,7 @@ Current CI requirements:
 
 Decision criteria:
 - If ARC v2 runners support Docker service containers → migrate `runs-on` to `[self-hosted, linux, standard]`
-- If not → defer to carbon-5 migration and document as known gap
+- If not → defer and document as known gap
 
 No changes needed if ARC v2 doesn't support service containers yet.
 

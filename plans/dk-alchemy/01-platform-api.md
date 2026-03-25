@@ -9,7 +9,7 @@ See `../../docs/platform-api.md` for the full API specification and `../../docs/
 ## Scope
 
 - FastAPI service in `dk-alchemy/src/platform-api/`
-- Endpoints: `/dk/v1/llm/*`, `/dk/v1/previews/*`, `/dk/v1/webhooks/*`, `/dk/v1/labels/*`, `/dk/v1/probes/*`
+- Endpoints: `/dk/v1/llm/*`, `/dk/v1/data/*`, `/dk/v1/previews/*`, `/dk/v1/webhooks/*`, `/dk/v1/labels/*`, `/dk/v1/probes/*`
 - Auth: API tokens with `dk_` prefix, RBAC (admin/developer/readonly), webhook HMAC-SHA256
 - Deployment: K8s in `infra` namespace, ArgoCD-managed, GHCR image
 - External: `dk.datakinetic.com` via edge route

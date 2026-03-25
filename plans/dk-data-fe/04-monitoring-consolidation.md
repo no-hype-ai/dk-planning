@@ -157,6 +157,34 @@ If missing, create a PR to dk-alchemy adding:
 
 ---
 
+## Workstream 5: Metering Observability
+
+When the metering proxy sidecar is deployed (Plan 05), add consumer usage dashboards and metering alerts.
+
+### Dependencies
+
+- [Plan 05](05-api-integration-and-metering.md) — metering proxy must be deployed and exposing metrics
+
+### Dashboards
+
+Add `monitoring/dashboards/dk-data-metering.json` — consumer usage dashboard with:
+- Consumer overview: total requests, unique consumers, active API keys
+- Request volume by consumer and schema (stacked time series)
+- Data transfer by consumer
+- Rate limit utilization and rejections
+- Latency P50/P95/P99 per consumer
+
+### Alerts
+
+Add `monitoring/alerts/dk-data-metering.yaml` with:
+- `DataConsumerRateLimitHigh` — consumer using >80% of rate limit sustained 15m (warning)
+- `DataConsumerUnauthorized` — >10 unauthorized requests in 5m (warning)
+- `DataSchemaAccessDenied` — unauthorized schema access attempt (warning)
+- `DataAPIKeyExpiringSoon` — key expires within 7 days (info)
+- `DataUsageAnomaly` — consumer volume >3x 7-day rolling average (warning)
+
+---
+
 ## Files to Create/Modify
 
 ```
@@ -164,9 +192,11 @@ dk-data-fe/
 ├── monitoring/
 │   ├── dashboards/
 │   │   ├── dk-data-overview.json          (new)
-│   │   └── dk-data-cronjobs.json          (new)
+│   │   ├── dk-data-cronjobs.json          (new)
+│   │   └── dk-data-metering.json          (new — after Plan 05)
 │   └── alerts/
-│       └── dk-data.yaml                   (new — moved from k8s/base/alert-rules.yaml)
+│       ├── dk-data.yaml                   (new — moved from k8s/base/alert-rules.yaml)
+│       └── dk-data-metering.yaml          (new — after Plan 05)
 ├── k8s/base/
 │   ├── kustomization.yaml                 (modify: alert-rules path)
 │   └── alert-rules.yaml                   (delete — moved to monitoring/)

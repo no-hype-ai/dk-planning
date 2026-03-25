@@ -151,8 +151,7 @@ Master execution plan across all workstreams. Synthesized from 41 plans across 6
 |---|------|------|--------|----------|
 | 3.1 | dk-phantom → DK-OS migration (smallest, pilot) | [dk-alchemy/10](plans/dk-alchemy/10-migrations.md) | Medium | Phase 2 complete |
 | 3.2 | dk-mercury → DK-OS migration | [dk-alchemy/10](plans/dk-alchemy/10-migrations.md) | Medium | 3.1 done |
-| 3.3 | dk-data-fe → carbon-5 migration | [dk-alchemy/10](plans/dk-alchemy/10-migrations.md) | Large | Phase 2 complete |
-| 3.4 | agent-mesh → DK-OS migration (largest) | [dk-alchemy/10](plans/dk-alchemy/10-migrations.md) | Large | Phase 2 complete |
+| 3.3 | agent-mesh → DK-OS migration (largest) | [dk-alchemy/10](plans/dk-alchemy/10-migrations.md) | Large | Phase 2 complete |
 | 3.5 | `dk init` command in dk-cli | [dk-template/06](plans/dk-template/06-dk-cli-integration.md) | Medium | 2.8–2.12 done |
 | 3.6 | VM lifecycle (naming, HA policies, template update) | [dk-clusters/06](plans/dk-clusters/06-vm-lifecycle.md) | Small | Independent |
 | 3.7 | behavior-labs-ai security & compliance hardening | [behavior-labs-ai/06](plans/behavior-labs-ai/06-security-and-compliance.md) | Medium | 2.1 Kyverno enforce, dk-compliance-v2 |
@@ -162,7 +161,8 @@ Master execution plan across all workstreams. Synthesized from 41 plans across 6
 
 ### Phase 3 Exit Criteria
 - [ ] ArgoCD shows no Applications for deprecated repos
-- [ ] dk-phantom, dk-mercury, dk-data-fe, agent-mesh archived
+- [ ] dk-phantom, dk-mercury, agent-mesh archived
+- [ ] dk-data-fe healthy in ArgoCD (first-class dk-managed product)
 - [ ] carbon-5, DK-OS healthy in ArgoCD
 - [ ] `dk init --product new-app --team eng --service api` creates production-ready repo
 - [ ] All VMs documented with HA policies applied

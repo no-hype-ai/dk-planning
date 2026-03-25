@@ -19,6 +19,7 @@ Data Kinetic runs a self-hosted [Kubernetes](https://kubernetes.io/docs/) platfo
 ├──────────────────────────────────────────────────────────┤
 │  Product repos (app layer)                                │
 │  ├── behavior-labs-ai   (reference implementation)        │
+│  ├── dk-data-fe         (data intelligence platform)      │
 │  ├── dk-compliance-v2                                     │
 │  ├── DK-OS              (includes agent-mesh fabric)       │
 │  └── carbon-5                                             │
@@ -72,8 +73,9 @@ Data Kinetic runs a self-hosted [Kubernetes](https://kubernetes.io/docs/) platfo
 |---------|------------|------------|-------|-------|
 | **BehaviorLabs AI** | [behavior-labs-ai](https://github.com/data-kinetic/behavior-labs-ai) | K8s / ArgoCD | [NestJS](https://docs.nestjs.com/), [Next.js](https://nextjs.org/docs), [PostgreSQL](https://www.postgresql.org/docs/) (pgvector), [Redis](https://redis.io/docs/), [SeaweedFS](https://github.com/seaweedfs/seaweedfs) | Production reference implementation |
 | **BehaviorLabs Web** | [behavior-labs-web](https://github.com/data-kinetic/behavior-labs-web) | K8s / ArgoCD | — | Production |
-| **Carbon-5** | [carbon-5](https://github.com/data-kinetic/carbon-5) | K8s / ArgoCD (target) | NestJS, Next.js, Drizzle, Prefect 3, PostgreSQL, Redis, SeaweedFS | Data pipeline + AI workflow platform. Absorbing dk-data-fe into Prefect dataflows. Agent workflow UI dispatches execution to DK-OS agent-mesh API. |
+| **Carbon-5** | [carbon-5](https://github.com/data-kinetic/carbon-5) | K8s / ArgoCD (target) | NestJS, Next.js, Drizzle, Prefect 3, PostgreSQL, Redis, SeaweedFS | Data pipeline + AI workflow platform. Agent workflow UI dispatches execution to DK-OS agent-mesh API. |
 | **DK-OS** | [DK-OS](https://github.com/data-kinetic-projects/DK-OS) | K8s / ArgoCD (target) | NestJS, Next.js, [Prisma](https://www.prisma.io/docs), Python (FastAPI), PostgreSQL, Redis, SeaweedFS | Business operating system + agent execution fabric. Absorbing dk-mercury + dk-phantom. Includes `agent-mesh` (Python FastAPI) providing agent CRUD, MCP gateway, inter-agent messaging, and [PR Review Service](pr-review-service.md) on krang GPUs. |
+| **DK Data** | [dk-data-fe](https://github.com/data-kinetic/dk-data-fe) | K8s / ArgoCD | Python, [FastAPI](https://fastapi.tiangolo.com/), [PostgREST](https://postgrest.org/), [PostgreSQL](https://www.postgresql.org/docs/), [SQLMesh](https://sqlmesh.readthedocs.io/) | Data intelligence platform — 24+ external sources, Bronze/Silver/Gold pipeline, metered API access |
 | **DK Compliance v2** | [dk-compliance-v2](https://github.com/data-kinetic/dk-compliance-v2) | K8s / ArgoCD (target) | — | Compliance management, pending onboarding |
 
 ### Being Deprecated (services migrating out)
@@ -81,7 +83,6 @@ Data Kinetic runs a self-hosted [Kubernetes](https://kubernetes.io/docs/) platfo
 | Product | Repository | Destination | Migration Doc |
 |---------|------------|-------------|---------------|
 | **Agent Mesh** | [agent-mesh](https://github.com/data-kinetic/agent-mesh) | DK-OS (`apps/agent-mesh/`) | Already integrated — standalone repo deprecated |
-| **DK Data** | [dk-data-fe](https://github.com/data-kinetic/dk-data-fe) | carbon-5 | [Plan](migrations/dk-data-to-carbon-5.md) |
 | **DK Mercury** | [dk-mercury](https://github.com/data-kinetic/dk-mercury) | DK-OS | [Plan](migrations/dk-mercury-to-dk-os.md) |
 | **DK Phantom** | [dk-phantom](https://github.com/data-kinetic/dk-phantom) | DK-OS | [Plan](migrations/dk-phantom-to-dk-os.md) |
 
@@ -125,7 +126,7 @@ DK-OS should move to the `data-kinetic` org to simplify ArgoCD repo credentials,
 | `*.preview.behaviorlabs.ai` | BehaviorLabs AI | Preview |
 | `grafana.behaviorlabs.ai` | dk-alchemy | [Grafana](https://grafana.com/docs/grafana/latest/) |
 | `agents.behaviorlabs.ai` | agent-mesh → carbon-5 | Remap post-migration |
-| `data.behaviorlabs.ai` | dk-data-fe → carbon-5 | Remap post-migration |
+| `data.behaviorlabs.ai` | dk-data-fe | Production |
 | `mercury.datakinetic.com` | dk-mercury → DK-OS | Remap post-migration |
 | `phantom.behaviorlabs.ai` | dk-phantom → DK-OS | Remap post-migration |
 | `*.dev.datakinetic.com` | DK-OS (staging) | Current staging |
@@ -140,4 +141,4 @@ DK-OS should move to the `data-kinetic` org to simplify ArgoCD repo credentials,
 - [Standards Compliance](standards-compliance.md) — CI/CD standards enforcement
 - [PR Review Service](pr-review-service.md) — automated PR review on DK-OS agent-mesh (krang GPUs)
 - [Onboarding](onboarding.md) — how to add a new product repo to the platform
-- [Migrations](migrations/README.md) — repo consolidation strategy
+- [Migrations](migrations/README.md) — repo consolidation strategy (dk-mercury, dk-phantom → DK-OS)

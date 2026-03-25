@@ -84,7 +84,7 @@ k8s/templates/
 1. **Define ingress/egress policies for each app**
    - `app` (Next.js): ingress from Traefik, egress to `api`, external (Clerk, PostHog)
    - `admin` (Next.js): ingress from Traefik, egress to `api`, external (Clerk)
-   - `api` (NestJS): ingress from `app`/`admin`/Traefik, egress to PostgreSQL, Redis, SeaweedFS, OpenSearch, LiteLLM, external (Clerk, Stripe, Svix)
+   - `api` (NestJS): ingress from `app`/`admin`/Traefik, egress to PostgreSQL, Redis, SeaweedFS, OpenSearch, LiteLLM, dk-data-fe metering-proxy (port 3001), external (Clerk, Stripe, Svix)
 
 2. **Create NetworkPolicy manifests**
    - Add to `k8s/base/` or environment-specific overlays

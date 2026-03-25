@@ -62,6 +62,7 @@ The platform runs significant infrastructure — 8x A100 GPUs on krang, LiteLLM 
    - **GPU section:** Fleet utilization heatmap, idle GPU hours this month, power consumption trend (from dk-clusters/07 DCGM metrics)
    - **K8s section:** Cluster efficiency trend, top overprovisioned namespaces (from Phase 2 data)
    - **VM section:** Per-VM resource allocation vs usage (from dk-clusters/07 pve-exporter metrics)
+   - **Data Platform section:** Total dk-data API requests (30d), top consumers by volume, data transfer trends, rate limit rejections (from dk-data-fe metering proxy `dk_data_requests_total`, `dk_data_response_bytes_total` metrics)
    - **Optimization Recommendations panel:** Text panel with PromQL-driven recommendations (e.g., "3 pods are using <20% of requested CPU")
 7. Create cost optimization alerts in `grafana/alerts/cost-optimization.yaml`:
    - `GPUFleetIdle`: all 8 GPUs < 5% utilization for 24h — info (significant idle cost)

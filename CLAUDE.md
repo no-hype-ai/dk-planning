@@ -92,6 +92,7 @@ done
 | Command | Usage | Purpose |
 |---------|-------|---------|
 | `/dk-execute` | `/dk-execute` or `/dk-execute phase 1` | Orchestrate subagents to work through current phase issues across all repos. Reports to Slack, escalates blockers. |
+| `/dk-epic-execute` | `/dk-epic-execute dk-planning#15` | Execute multi-repo epic — resolves dependency DAG, launches parallel sub-agents per wave, merges PRs in order. See [docs/epic-orchestration.md](docs/epic-orchestration.md). |
 | `/dk-status` | `/dk-status` or `/dk-status 1` | Show milestone progress, P0 issues, blocked work, and phase gate status across all repos. |
 | `/dk-notify` | `/dk-notify "message"` or `/dk-notify dm blocker details` | Send coordination message to Slack (#dk-infrastructure or DM Nick King). |
 

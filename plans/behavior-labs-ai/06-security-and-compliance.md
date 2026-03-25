@@ -13,6 +13,7 @@ Harden behavior-labs-ai security posture and align with compliance requirements 
 | **Secrets** | Doppler (no .env files), project: `behaviorlabs-applications` with dev/stg/prd |
 | **API Security** | `@repo/api-middleware` for auth wrappers, validation (Zod) |
 | **Rate Limiting** | `@repo/rate-limit` package exists |
+| **dk-data Access** | Not yet integrated — pending dk-data-fe/05 metering proxy and consumer API keys |
 | **Network** | Traefik ingress, infrastructure namespace NetworkPolicy only |
 | **Dependencies** | Dependabot active, security overrides in package.json |
 | **Compliance** | dk-compliance-v2 manages SOC 2, HIPAA, ISO 27001, NIST 800-171, CMMC L2 |
@@ -197,6 +198,32 @@ package.json (overrides section)
 pnpm-lock.yaml
 Dockerfile (base image versions)
 ```
+
+---
+
+## Workstream 6: dk-data Access Controls
+
+behavior-labs-ai consumes dk-data-fe for pharma intelligence data. Access must be secured with API keys, schema-level RBAC, and audit logging.
+
+### Dependencies
+
+- [dk-data-fe/05 API Integration & Metering](../dk-data-fe/05-api-integration-and-metering.md)
+
+### Steps
+
+1. **Obtain and secure dk-data consumer API key**
+   - Key issued via Platform API with schema restrictions (`mart`, `api`, `mol_api`, `scoring`)
+   - Stored in Doppler (`behaviorlabs-applications/prd` → `DK_DATA_API_KEY`)
+   - Key rotation procedure documented alongside LiteLLM key rotation
+
+2. **Audit data access patterns**
+   - Document which features query which dk-data schemas
+   - Verify no feature accesses schemas outside its approved set
+   - Review response data for PII/PHI from dk-data (drug data may contain FDA reviewer names, hospital identifiers)
+
+3. **Add dk-data query audit logging**
+   - Log all dk-data queries with OTel span attributes: `dk_data.schema`, `dk_data.table`, `dk_data.consumer`
+   - Rate limit rejections (429s) logged as warnings for operational awareness
 
 ---
 

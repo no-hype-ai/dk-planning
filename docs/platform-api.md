@@ -69,6 +69,23 @@ Manages GitHub label taxonomy across the `data-kinetic` org.
 | `POST` | `/dk/v1/labels/sync` | Sync label taxonomy to specified repos |
 | `GET` | `/dk/v1/labels/audit` | Audit label compliance across org |
 
+### Data Metering
+
+Manages consumer API keys and usage metering for [dk-data-fe](https://github.com/data-kinetic/dk-data-fe). Keys control schema-level access and rate limits. Usage metrics are queried from the dk-data metering proxy's Prometheus metrics in Mimir.
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| `POST` | `/dk/v1/data/keys` | Create consumer API key (app, rate limit, allowed schemas) |
+| `GET` | `/dk/v1/data/keys` | List keys with usage stats |
+| `PUT` | `/dk/v1/data/keys/{alias}` | Update key config (rate limits, schema access) |
+| `DELETE` | `/dk/v1/data/keys/{alias}` | Revoke key |
+| `POST` | `/dk/v1/data/keys/{alias}/rotate` | Rotate key (24h grace period for old key) |
+| `GET` | `/dk/v1/data/usage` | Aggregate usage (time range, grouping) |
+| `GET` | `/dk/v1/data/usage/{alias}` | Per-consumer: requests, data volume, query count |
+| `GET` | `/dk/v1/data/schemas` | Available schemas and access tiers |
+| `GET` | `/dk/v1/data/limits` | View rate limits per consumer |
+| `PUT` | `/dk/v1/data/limits/{alias}` | Update consumer rate limits |
+
 ### Probes
 
 Read-only access to probe-service status.
@@ -98,6 +115,7 @@ Read-only access to probe-service status.
 | GitHub App credentials | `dk-infrastructure/prd` | Webhook verification, repo access |
 | SSH key (VM101) | `dk-infrastructure/prd` | Preview stack orchestration |
 | API signing key | `dk-infrastructure/prd` | Token generation and validation |
+| dk-data consumer key signing | `dk-infrastructure/prd` | Data consumer API key generation |
 
 ## dk-cli Integration
 
@@ -108,7 +126,7 @@ api_url: https://dk.datakinetic.com
 api_token: dk_...
 ```
 
-All server-backed dk-cli commands (`dk llm`, `dk preview`, `dk labels sync --org`) route through this API. Local-only commands (`dk check`, `dk init`, `dk up`) do not require the API.
+All server-backed dk-cli commands (`dk llm`, `dk preview`, `dk data`, `dk labels sync --org`) route through this API. Local-only commands (`dk check`, `dk init`, `dk up`) do not require the API.
 
 ## Related Documentation
 

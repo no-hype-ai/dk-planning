@@ -184,6 +184,42 @@ behavior-labs-ai uses BullMQ for async job processing across 6+ worker queues. A
 
 ---
 
+## Workstream 5: dk-data Integration
+
+behavior-labs-ai consumes dk-data-fe's data intelligence API for pharma analytics — drug data, clinical trials, patent information, regulatory filings, and molecular data. This workstream establishes the integration pattern.
+
+### Dependencies
+
+- [dk-data-fe/05 API Integration & Metering](../dk-data-fe/05-api-integration-and-metering.md) — metering proxy and consumer key flow
+
+### Steps
+
+1. **Identify consumed schemas**
+   - `mart` — drug development analytics, hospital scoring, TAVR data
+   - `api` — PostgREST auto-generated REST endpoints
+   - `mol_api` — molecular data (structures, patents, clinical trials)
+   - `scoring` — proprietary scoring models
+
+2. **Obtain dk-data consumer API key**
+   - Request key via Platform API: `dk data keys create --app behavior-labs-ai --schemas mart,api,mol_api,scoring --rpm 500`
+   - Store key in Doppler: `behaviorlabs-applications/prd` → `DK_DATA_API_KEY`
+   - Configure in API service env: `DK_DATA_API_KEY` and `DK_DATA_BASE_URL=https://data.behaviorlabs.ai`
+
+3. **Create data client package**
+   - Add `packages/dk-data-client/` to behavior-labs-ai monorepo
+   - Typed REST client for dk-data PostgREST API
+   - Auth header injection from `DK_DATA_API_KEY`
+   - Error handling for 401 (key invalid), 403 (schema denied), 429 (rate limited)
+
+4. **Update NetworkPolicy**
+   - Allow egress from behavior-labs-ai namespace to dk-data namespace on port 3001 (metering proxy)
+
+5. **Add data query observability**
+   - Track dk-data queries in OTel spans: schema, response time, data volume
+   - Alert on dk-data unavailability (circuit breaker)
+
+---
+
 ## Verification
 
 - [ ] Model inventory table fully populated
@@ -192,6 +228,9 @@ behavior-labs-ai uses BullMQ for async job processing across 6+ worker queues. A
 - [ ] BullMQ queue architecture documented
 - [ ] LLM cost metrics flowing to dk-alchemy/13 dashboard
 - [ ] `@repo/ai` patterns documented with error handling standards
+- [ ] dk-data consumer key configured in Doppler
+- [ ] `packages/dk-data-client/` queries dk-data schemas successfully
+- [ ] NetworkPolicy allows egress to dk-data namespace
 
 ## Risk Register
 

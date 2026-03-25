@@ -63,7 +63,7 @@ Reusable Kustomize components in `k8s/components/`:
 | BehaviorLabs AI | `data-kinetic/behavior-labs-ai` | `main` | `staging` | Production |
 | BehaviorLabs Web | `data-kinetic/behavior-labs-web` | `main` | `staging` | Production |
 | Agent Mesh | `data-kinetic/agent-mesh` | `main` | `staging` | Deprecated — migrating to DK-OS |
-| DK Data | `data-kinetic/dk-data-fe` | `main` | `staging` | Deprecated — migrating to carbon-5 |
+| DK Data | `data-kinetic/dk-data-fe` | `main` | `staging` | Production |
 | DK Mercury | `data-kinetic/dk-mercury` | `main` | `staging` | Deprecated — migrating to DK-OS |
 | DK Phantom | `data-kinetic/dk-phantom` | `main` | `staging` | Deprecated — migrating to DK-OS |
 

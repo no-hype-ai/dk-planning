@@ -22,7 +22,8 @@ Operational documentation for the Data Kinetic platform — a self-hosted [Kuber
 |------------|------|--------|
 | [dk-alchemy](https://github.com/data-kinetic/dk-alchemy) | Platform mono-repo — infra, CD, observability | Production (K8s/ArgoCD) |
 | [behavior-labs-ai](https://github.com/data-kinetic/behavior-labs-ai) | Pharma SaaS — reference product repo | Production (K8s/ArgoCD) |
-| [carbon-5](https://github.com/data-kinetic/carbon-5) | Data pipeline + AI workflow platform | Early — onboarding to K8s/ArgoCD. Absorbing agent-mesh + dk-data-fe |
+| [dk-data-fe](https://github.com/data-kinetic/dk-data-fe) | Data intelligence platform — 24+ sources, Bronze/Silver/Gold pipeline | Production (K8s/ArgoCD) |
+| [carbon-5](https://github.com/data-kinetic/carbon-5) | Data pipeline + AI workflow platform | Early — onboarding to K8s/ArgoCD |
 | [DK-OS](https://github.com/data-kinetic-projects/DK-OS) | Business operating system | Early — onboarding to K8s/ArgoCD. Absorbing dk-mercury + dk-phantom |
 | [dk-compliance-v2](https://github.com/data-kinetic/dk-compliance-v2) | Compliance management platform | Pending onboarding |
 | [dk-clusters](https://github.com/data-kinetic/dk-clusters) | Proxmox cluster management — host configs, VM lifecycle, storage, networking, DR for penguin + krang | New |
@@ -33,7 +34,6 @@ Operational documentation for the Data Kinetic platform — a self-hosted [Kuber
 | Repository | Destination | Migration Doc |
 |------------|-------------|---------------|
 | [agent-mesh](https://github.com/data-kinetic/agent-mesh) | DK-OS | [Migration plan](migrations/agent-mesh-to-dk-os.md) |
-| [dk-data-fe](https://github.com/data-kinetic/dk-data-fe) | carbon-5 | [Migration plan](migrations/dk-data-to-carbon-5.md) |
 | [dk-mercury](https://github.com/data-kinetic/dk-mercury) | DK-OS | [Migration plan](migrations/dk-mercury-to-dk-os.md) |
 | [dk-phantom](https://github.com/data-kinetic/dk-phantom) | DK-OS | [Migration plan](migrations/dk-phantom-to-dk-os.md) |
 
@@ -73,7 +73,6 @@ Operational documentation for the Data Kinetic platform — a self-hosted [Kuber
 |----------|-------|
 | [Migration Overview](migrations/README.md) | Repo consolidation strategy, target state diagram, migration ordering, cross-cutting concerns (dk-alchemy cleanup, domain remapping, deployment model shift, database consolidation) |
 | [agent-mesh → DK-OS](migrations/agent-mesh-to-dk-os.md) | Agent orchestration, MCP gateway, 25+ tables, SDK → merges into DK-OS agent-mesh |
-| [dk-data-fe → carbon-5](migrations/dk-data-to-carbon-5.md) | Data pipeline (Python), 25+ sources, SQLMesh, PostgREST → absorbed into carbon-5's Prefect dataflow system |
 | [dk-mercury → DK-OS](migrations/dk-mercury-to-dk-os.md) | Org intelligence, NeMo STT, knowledge graph, connectors — [NestJS](https://docs.nestjs.com/) into DK-OS [Docker](https://docs.docker.com/) Compose |
 | [dk-phantom → DK-OS](migrations/dk-phantom-to-dk-os.md) | Synthetic testing, security audit, [Playwright](https://playwright.dev/docs/intro) — smallest migration, recommended first |
 
@@ -84,6 +83,12 @@ Operational documentation for the Data Kinetic platform — a self-hosted [Kuber
 | [Self-Hosted Runners & Webhook Service](self-hosted-runners-and-webhooks.md) | ARC v2 runners on K3s (penguin/krang), webhook-driven kustomize updates, runner classes, migration path, PR event forwarding |
 | [Standards Compliance](standards-compliance.md) | Tiered CI/CD standards enforcement: manifest validation, observability, CI/CD, code patterns. Shared definitions consumed by CI checks and PR reviewer. |
 | [PR Review Service](pr-review-service.md) | Automated PR review on DK-OS agent-mesh (krang GPUs): security, observability, standards, and code quality rubrics. [OpenHands](https://docs.all-hands.dev/) SDK integration, review thresholds. |
+
+### Orchestration & Automation
+
+| Document | Scope |
+|----------|-------|
+| [Epic Orchestration](epic-orchestration.md) | `/dk-epic-execute` command — multi-repo epic execution with wave-based DAG, sub-agents, PR isolation, merge gates, crash recovery. Usage guide, epic issue format, merge strategy, failure handling. |
 
 ### Getting Started
 
@@ -112,7 +117,7 @@ Operational documentation for the Data Kinetic platform — a self-hosted [Kuber
 | GitHub Template Repo for scaffolding | `dk-template` generates full repo structure, CI workflows, and dk-alchemy PR content | [Template Repository](template-repo.md) |
 | Self-hosted runners (ARC v2) | Ephemeral pods on K3s, 3 runner classes (standard/large/gpu) | [Runners & Webhooks](self-hosted-runners-and-webhooks.md) |
 | Webhook-driven deploys | Centralized webhook service replaces per-repo kustomize commits | [Runners & Webhooks](self-hosted-runners-and-webhooks.md) |
-| Repo consolidation (6 → 3+1) | Deprecate agent-mesh, dk-data-fe, dk-mercury, dk-phantom — absorb into carbon-5 and DK-OS | [Migrations](migrations/README.md) |
+| Repo consolidation | Deprecate agent-mesh, dk-mercury, dk-phantom — absorb into DK-OS. dk-data-fe remains independent. | [Migrations](migrations/README.md) |
 | DK-OS agent-mesh as agent execution layer | Absorbs agent-mesh. Provides agent CRUD, LLM execution, MCP gateway, tool sandboxing + existing mail/orchestration/governance. Products consume via API. | [Migrations](migrations/README.md) |
 | K8s/ArgoCD for all platforms | carbon-5, DK-OS onboard to K3s cluster following behavior-labs-ai patterns | [Migrations](migrations/README.md) |
 | Tiered standards compliance | 4-tier system (manifests, observability, CI/CD, code patterns) with shared YAML definitions | [Standards Compliance](standards-compliance.md) |
@@ -128,12 +133,11 @@ Current → target state for key concerns:
 | agent-mesh → DK-OS | Separate repo on K8s | Agent execution in DK-OS agent-mesh | High | [Migration](migrations/agent-mesh-to-dk-os.md) |
 | Automated PR review | Manual review only | PR critic on DK-OS agent-mesh (krang GPUs) | High | [PR Review Service](pr-review-service.md) |
 | dk-cli | No CLI tooling | `@datakinetic/cli` — full lifecycle CLI (`dk init`, `dk up`, `dk check`, etc.) | High | [dk-cli](dk-cli.md) |
-| dk-data-fe → carbon-5 | Separate repo on K8s | Python service in carbon-5 | High | [Migration](migrations/dk-data-to-carbon-5.md) |
 | dk-mercury → DK-OS | Separate repo on K8s | DK-OS module on Megatron | High | [Migration](migrations/dk-mercury-to-dk-os.md) |
 | dk-phantom → DK-OS | Separate repo on K8s | DK-OS module on Megatron | High | [Migration](migrations/dk-phantom-to-dk-os.md) |
 | DR runbook | Tribal knowledge | Documented + tested | High | [Disaster Recovery](disaster-recovery.md) |
 | Error tracking | Sentry + OTel (dual) | OTel → Loki only | High | [App Instrumentation](application-instrumentation.md) |
-| Repo consolidation | 6+ single-purpose repos | 3 platforms | High | [Migrations](migrations/README.md) |
+| Repo consolidation | Single-purpose repos | Absorb into DK-OS (dk-mercury, dk-phantom, agent-mesh) | High | [Migrations](migrations/README.md) |
 | Repo onboarding | Manual / ad-hoc | `dk-template` GitHub Template + onboarding checklist | High | [Template Repository](template-repo.md) |
 | LLM management | Manual LiteLLM admin API | dk-cli + Platform API key management, budgets, cost tracking | High | [LiteLLM](litellm.md) |
 | Platform API | No unified control plane | dk-alchemy Platform API (FastAPI) — LLM, previews, webhooks, labels | High | [Platform API](platform-api.md) |

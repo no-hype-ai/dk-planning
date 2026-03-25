@@ -1,7 +1,7 @@
 # Repository Consolidation Migrations
 
 ## Context
-Single-purpose repos are being consolidated into 2 target platforms (DK-OS, carbon-5). Each migration moves services, databases, and GitOps config from a deprecated repo into its target. dk-alchemy needs cleanup after each migration (remove external app bootstraps, namespaces, DopplerSecrets).
+Single-purpose repos are being consolidated into DK-OS. Each migration moves services, databases, and GitOps config from a deprecated repo into its target. dk-alchemy needs cleanup after each migration (remove external app bootstraps, namespaces, DopplerSecrets). Note: dk-data-fe migration to carbon-5 has been cancelled — dk-data-fe is now a permanent first-class dk-managed product.
 
 ## ⚠️ SAFETY GATE — MANDATORY PRE-DELETION CHECKLIST
 
@@ -30,7 +30,7 @@ Single-purpose repos are being consolidated into 2 target platforms (DK-OS, carb
 ## Scope
 - dk-phantom → DK-OS (smallest, recommended first)
 - dk-mercury → DK-OS
-- dk-data-fe → carbon-5
+- ~~dk-data-fe → carbon-5~~ **CANCELLED** — dk-data-fe is now a first-class dk-managed product; no migration needed
 - ~~agent-mesh → lithium-5~~ **CANCELLED** — agent-mesh is now DK-OS agent-mesh (`apps/agent-mesh/` in DK-OS repo); no migration needed
 - dk-alchemy cleanup per migration (bootstrap removal, namespace cleanup)
 - New repo onboarding (carbon-5, DK-OS, dk-compliance-v2)
@@ -47,7 +47,6 @@ Single-purpose repos are being consolidated into 2 target platforms (DK-OS, carb
 ## Recommended Execution Order
 1. **dk-phantom → DK-OS** (smallest migration, good pilot)
 2. **dk-mercury → DK-OS** (NestJS, same target as dk-phantom)
-3. **dk-data-fe → carbon-5** (Python, complex data pipeline)
 
 ## Per-Migration Steps (template)
 
@@ -92,11 +91,8 @@ Single-purpose repos are being consolidated into 2 target platforms (DK-OS, carb
 - DELETE: .gitops/repositories/dk-mercury-bootstrap.yaml
 - MODIFY: .gitops/repositories/kustomization.yaml (remove dk-mercury)
 
-### dk-data-fe → carbon-5
-- DELETE: .gitops/external/dk-data-fe-prod.yaml, dk-data-fe-staging.yaml
-- DELETE: .gitops/repositories/dk-data-bootstrap.yaml
-- MODIFY: grafana/dashboards/applications/ (update dk-data dashboard references)
-- MODIFY: grafana/alerts/dk-data.yaml (update service labels)
+### ~~dk-data-fe → carbon-5~~ CANCELLED
+> dk-data-fe is now a first-class dk-managed product. No migration. Its `.gitops/external/` bootstrap files, namespace, and DopplerSecrets remain in dk-alchemy permanently.
 
 ### agent-mesh → ~~lithium-5~~ CANCELLED
 > agent-mesh has been superseded by DK-OS agent-mesh (`apps/agent-mesh/` in the DK-OS repo).

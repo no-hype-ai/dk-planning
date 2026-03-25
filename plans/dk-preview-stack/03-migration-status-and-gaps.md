@@ -233,7 +233,7 @@ SSH Key in Doppler (dk-alchemy/Doppler)
 | 16 | Alert rules | dk-alchemy | Configured | Done | — |
 | 17 | Cleanup cron on VM101 | VM101 | `/etc/cron.d/dk-preview-cleanup` | Done | — |
 | 18 | VM101 Proxmox RAM | dk-clusters | `docs/vm-inventory.md` | Resolved — 64 GiB allocated (balloon 32 GiB), docs were always wrong | Update docs |
-| 19 | carbon-5 decommission | VM101 | `/opt/dk-production/carbon-5/` | **Decision: decommission** — Doppler token missing, not worth fixing | Frees 10 containers |
+| 19 | carbon-5 decommission | VM101 | `/opt/dk-production/carbon-5/` | **Decision: decommission** — Doppler token missing, not worth fixing | Frees 10 containers. **Verify:** `docker compose -f /opt/dk-production/carbon-5/docker-compose.yaml down` executed and containers removed. |
 | 20 | surgeo Clerk keys | VM101 | `/opt/dk-previews/active/surgeo/.env` | **Fix needed** — create .env with Clerk keys from Doppler | surgeo health |
 | 21 | Production app K8s migration | dk-alchemy | New manifests needed | **Not started** — enercore, abts-surgeo (carbon-5 decommissioned) | VM101 resource freeing |
 

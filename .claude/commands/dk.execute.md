@@ -4,6 +4,8 @@ description: "Execute implementation plan — orchestrate subagents across dk-al
 
 # DK Platform Execution Orchestrator
 
+> **For epic-scoped work** spanning multiple repos with dependency DAGs and PR isolation, use `/dk-epic-execute` instead. This command works best for phase-level execution within individual repos.
+
 ## User Input
 
 ```text

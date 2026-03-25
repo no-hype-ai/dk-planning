@@ -314,6 +314,40 @@ dk-data-fe/
 │   └── pdb-job-trigger.yaml               (new)
 ```
 
+## Workstream 7: Kyverno Policy Compliance
+
+dk-alchemy deploys 6 Kyverno policies in audit mode (including `require-run-as-non-root`, `require-read-only-rootfs`, `require-labels`). dk-data-fe pods must pass all policies before Kyverno moves to enforce mode.
+
+### Step 14: Add Required Pod Labels
+
+All pod templates must include these labels (required by `require-labels` policy):
+
+```yaml
+metadata:
+  labels:
+    team: data-platform
+    service: dk-data
+    product: dk-data
+```
+
+Apply to: PostgREST Deployment, job-trigger Deployment, all 20+ CronJob pod templates.
+
+### Step 15: Verify Kyverno Compliance
+
+After applying securityContext (Workstream 4) and labels (Step 14):
+
+```bash
+# Check policy audit results for dk-data namespace
+kubectl get policyreport -n dk-data-prod -o yaml | grep -A5 "result: fail"
+
+# Verify all pods pass all 6 policies
+kubectl get clusterpolicyreport -o yaml | grep -B2 "dk-data"
+```
+
+All dk-data-fe pods must show `result: pass` for all policies before the namespace can be moved to Kyverno enforce mode.
+
+---
+
 ## Verification
 
 - [ ] `kubectl kustomize k8s/overlays/prod` renders all Deployments with `strategy.rollingUpdate`
@@ -324,6 +358,8 @@ dk-data-fe/
 - [ ] Deploy to staging: PostgREST pods spread across nodes (`kubectl get pods -o wide`)
 - [ ] Staging node drain test: drain one node, verify PostgREST remains available
 - [ ] Staging CronJob test: mol-transform completes within resource limits
+- [ ] All pod templates have `team`, `service`, `product` labels
+- [ ] Kyverno policy report shows zero failures for dk-data namespace
 
 ## Risk Mitigation
 

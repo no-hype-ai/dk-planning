@@ -16,7 +16,7 @@ These plans cover two categories:
 | **Packages** | 30 shared packages under `packages/` (`@repo/*` namespace) |
 | **Stack** | TypeScript 5.9+, React 19, Prisma, BullMQ, Clerk, Vercel AI SDK, Tailwind v4 + Radix UI |
 | **Infrastructure** | K3d local / K3s production, ArgoCD GitOps, Doppler secrets, Kustomize overlays |
-| **External** | dk-alchemy (PostgreSQL, Redis, SeaweedFS, OpenSearch), dk-litellm (LLM gateway at llm.behaviorlabs.ai) |
+| **External** | dk-alchemy (PostgreSQL, Redis, SeaweedFS, OpenSearch), dk-litellm (LLM gateway at llm.behaviorlabs.ai), dk-data-fe (data intelligence API at data.behaviorlabs.ai) |
 | **CI/CD** | GitHub Actions: build-deploy.yaml, test.yaml, 13 issue governance workflows |
 | **Observability** | Sentry + OTel (dual-write), PostHog analytics, `@repo/observability` package |
 | **Auth** | Clerk (@clerk/nextjs 7.x, @clerk/backend 3.x), multi-org RBAC |
@@ -67,6 +67,7 @@ Cross-repo outputs (behavior-labs-ai → dk-template):
 | [03 Security Hardening](../dk-alchemy/03-security-hardening.md) | [02 Infrastructure](02-infrastructure-modernization.md), [06 Security](06-security-and-compliance.md) | Kyverno policies, NetworkPolicy patterns |
 | [13 Cost & Utilization](../dk-alchemy/13-cost-and-utilization.md) | [02 Infrastructure](02-infrastructure-modernization.md) | Efficiency dashboard informs resource tuning |
 | [09 Governance Extraction](../dk-alchemy/09-governance-extraction.md) | [01 Platform Integration](01-platform-integration.md) | behavior-labs-ai governance scripts → org-level workflows |
+| [dk-data-fe/05 API Integration](../dk-data-fe/05-api-integration-and-metering.md) | [05 AI & LLM Infrastructure](05-lightrag-and-ai-infrastructure.md) | behavior-labs-ai consumes dk-data for pharma intelligence (mart, api, mol_api, scoring schemas) |
 
 ## Recommended Execution Sequence
 
@@ -99,4 +100,5 @@ behavior-labs-ai has 40+ specs in its `specs/` directory organized by feature nu
 
 - [dk-alchemy plans](../dk-alchemy/) — platform-level implementation
 - [dk-clusters plans](../dk-clusters/) — Proxmox cluster management
+- [dk-data-fe plans](../dk-data-fe/) — data intelligence platform (consumed by behavior-labs-ai)
 - [dk-template plans](../dk-template/) — repo scaffolding patterns

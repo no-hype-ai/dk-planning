@@ -17,7 +17,7 @@
 | **Database** | 16 schemas: raw, staging, mart, scoring, meta, api, mol_raw through mol_api, bronze, silver, gold, xenon |
 | **Deployment** | Kustomize base + overlays (staging/prod), ArgoCD auto-sync with prune + self-heal |
 | **Observability** | OTel tracing, Prometheus metrics (ServiceMonitor, PodMonitor, Probe), structlog, 12 alert rules in 5 groups |
-| **Secrets** | Doppler (`dk-data-secrets`, `ghcr-credentials`, `minio-backup-credentials`) |
+| **Secrets** | Doppler (`dk-data-secrets`, `ghcr-credentials`, `minio-backup-credentials` — pending rename to `s3-backup-credentials` after SeaweedFS migration) |
 | **CI/CD** | 4 workflows: ci.yaml, build-push.yaml, post-deploy-verify.yaml, promote-to-prod.yaml |
 
 ## Priority Matrix
@@ -30,6 +30,7 @@
 | 02 | [Standards & Governance](02-standards-and-governance.md) | P1 | Not Started | `.dk-standards.yaml`, standards workflow, issue labels, Kustomize component alignment | Plan 01 |
 | 03 | [Production Hardening](03-production-hardening.md) | **P0** | Not Started | Rolling updates, PDBs, anti-affinity, security contexts, CronJob resource limits | Plan 01 |
 | 04 | [Monitoring Consolidation](04-monitoring-consolidation.md) | P1 | Not Started | `monitoring/` directory, Grafana dashboards as code, alert label standardization | Plan 01 |
+| 05 | [API Integration & Metering](05-api-integration-and-metering.md) | **P0** | Not Started | Metering proxy sidecar, Platform API data endpoints, consumer onboarding, security | Plan 01, dk-alchemy/01 |
 
 ## Dependency Graph
 
@@ -42,11 +43,15 @@
   ├──► 03-production-hardening (P0, highest impact)
   │       Independent implementation, SeaweedFS migration for backup CronJobs
   │
-  └──► 04-monitoring-consolidation (P1, after audit)
-          Independent implementation, dk-alchemy contact point for Grafana alerting
+  ├──► 04-monitoring-consolidation (P1, after audit)
+  │       Independent implementation, dk-alchemy contact point for Grafana alerting
+  │
+  └──► 05-api-integration-and-metering (P0, after audit + Platform API)
+          Requires: dk-alchemy/01 Platform API, dk-alchemy/14 data metering endpoints
 
-Plans 02, 03, 04 can run in parallel after Plan 01.
+Plans 02, 03, 04, 05 can run in parallel after Plan 01.
 Plan 03 should be prioritized — directly affects production reliability.
+Plan 05 should follow close behind — enables secure metered access for consumers.
 ```
 
 ## Alignment with Existing Plans
@@ -58,6 +63,8 @@ Plan 03 should be prioritized — directly affects production reliability.
 | [dk-alchemy/06 Shared Observability](../dk-alchemy/06-shared-observability-package.md) | N/A | dk-data-fe is Python (package is TypeScript `@datakinetic/observability`) |
 | [dk-alchemy/09 Governance Extraction](../dk-alchemy/09-governance-extraction.md) | [02 Standards & Governance](02-standards-and-governance.md) | Org-level label sync, shared governance workflows |
 | [dk-alchemy/10 Migrations](../dk-alchemy/10-migrations.md) | [03 Production Hardening](03-production-hardening.md) | SeaweedFS migration affects backup CronJobs |
+| [dk-alchemy/01 Platform API](../dk-alchemy/01-platform-api.md) | [05 API Integration & Metering](05-api-integration-and-metering.md) | Platform API provides key management; dk-data-fe adds metering proxy |
+| [dk-alchemy/14 Data Metering](../dk-alchemy/14-data-metering-endpoints.md) | [05 API Integration & Metering](05-api-integration-and-metering.md) | New Platform API `/dk/v1/data/*` endpoints for dk-data consumer keys |
 | [dk-template/01-06](../dk-template/) | [01 Audit](01-platform-alignment-audit.md) | Template patterns define the target state for alignment |
 
 ## What's Already Done
