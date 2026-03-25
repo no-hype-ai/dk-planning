@@ -8,116 +8,143 @@
 **Runtime:** [Bun](https://bun.sh/) (TypeScript, compiled binary)
 **Install:** `curl -fsSL https://dk.datakinetic.com/install | sh`
 **Update:** `dk self-update`
+**Version:** 0.1.0
 
 ## Commands
 
-### Scaffolding
+Status key: **Implemented** = shipped and working, **Planned** = documented but not yet built.
 
-| Command | Purpose |
-|---------|---------|
-| `dk init` | Scaffold a new product repo from [`dk-template`](https://github.com/data-kinetic/dk-template). Generates `.gitops/`, `k8s/`, `monitoring/`, CI workflows, and local dev config. Prompts for product name, team, service name. |
-| `dk onboard` | Interactive walkthrough of the [onboarding checklist](onboarding.md). Tracks progress, validates each step, and generates the dk-alchemy PR content. |
+### Auth & Identity
 
-### Local Development
+| Command | Purpose | Status |
+|---------|---------|--------|
+| `dk login` | Authenticate via DK-OS Clerk device code flow. Supports `--api-key <key>` for CI. | Implemented |
+| `dk logout` | Clear stored session, revoke server-side token (best-effort). | Implemented |
+| `dk whoami` | Show current identity — user, role, organization, permissions. | Implemented |
+| `dk doctor` | Diagnose dk installation, configuration, and connectivity to Platform API. | Implemented |
 
-| Command | Purpose |
-|---------|---------|
-| `dk up` | Start the local development environment. Detects `docker-compose.yaml` or `k3d` config in `.gitops/local/apps/` and starts services with secrets injected from [Doppler](https://docs.doppler.com/). |
-| `dk down` | Stop and clean up the local environment. Tears down containers/clusters and removes ephemeral volumes. |
-| `dk logs [service]` | Stream logs from local services. Without a service name, streams all. Supports `--follow` and `--tail`. |
-| `dk status` | Show running services, health check results, and port mappings. |
+### Repo Lifecycle
 
-### Secrets
+| Command | Purpose | Status |
+|---------|---------|--------|
+| `dk init` | Scaffold a new product repo from [`dk-template`](https://github.com/data-kinetic/dk-template). Interactive prompts for product name, team, services. Alias: `dk create`. | Implemented |
+| `dk adopt` | Onboard an existing repo to the DK platform. Generates `.dk-standards.yaml`, CI workflows, gitops scaffolds. `--verify` for dry-run. | Implemented |
+| `dk onboard` | Interactive walkthrough of the onboarding checklist (7 steps). `--status` for progress-only. | Implemented |
 
-| Command | Purpose |
-|---------|---------|
-| `dk secrets setup` | Initialize Doppler project structure for the current repo. Creates `dev`, `stg`, `prd` configs and generates `DopplerSecret` CRD manifests. |
-| `dk secrets pull` | Pull secrets from Doppler `dev` config into a local `.env` file (git-ignored). |
-| `dk secrets push <key> <value>` | Set a secret in the current Doppler config. |
-| `dk secrets list` | List secret keys (values masked) for the current config. |
+### Promotion Lifecycle
 
-### Observability
-
-| Command | Purpose |
-|---------|---------|
-| `dk observe init` | Add the `@datakinetic/observability` package, generate `instrumentation.ts`, create dashboard and alert scaffolds in `monitoring/`. |
-| `dk observe dashboard <service>` | Generate a [Grafana](https://grafana.com/docs/grafana/latest/) dashboard JSON for a service with standard panels (request rate, error rate, latency, resource usage). |
-| `dk observe alert <service>` | Generate alert rule YAML with required labels (`team`, `service`, `product`, `severity`). |
-| `dk observe validate` | Validate dashboard JSON and alert YAML against platform conventions. |
-
-### Standards & Compliance
-
-| Command | Purpose |
-|---------|---------|
-| `dk check` | Run all applicable [standards compliance](standards-compliance.md) checks locally. Validates manifests (Tier 1), observability (Tier 2), CI/CD (Tier 3), and code patterns (Tier 4). |
-| `dk check --tier <n>` | Run checks for a specific tier only. |
-| `dk check --fix` | Auto-fix issues where possible (add missing labels, resource limits, etc.). |
-
-### Labels & Governance
-
-| Command | Purpose |
-|---------|---------|
-| `dk labels sync` | Validate and create [GitHub](https://docs.github.com/en/actions) labels in the current repo matching the platform taxonomy (type/, priority/, status/, risk/, area/ prefixes). Reports missing, extra, and misconfigured labels. |
-| `dk labels sync --apply` | Create/update labels to match the taxonomy. Without `--apply`, runs in dry-run mode. |
-| `dk labels sync --org` | Sync labels across all repos in the `data-kinetic` org. |
-
-### LLM Management
-
-Commands backed by the [Platform API](platform-api.md), which proxies to [LiteLLM](litellm.md).
-
-| Command | Purpose |
-|---------|---------|
-| `dk llm keys list` | List all virtual keys with budgets, rate limits, and usage stats |
-| `dk llm keys create` | Create a virtual key (interactive: app name, budget, RPM, TPM, allowed models) |
-| `dk llm keys rotate <alias>` | Rotate a virtual key, returning the new key value |
-| `dk llm keys update <alias>` | Update key config (budget, rate limits, model restrictions) |
-| `dk llm budget` | Show budget usage across all apps (spent, remaining, % used) |
-| `dk llm models` | List available models from all configured providers |
+| Command | Purpose | Status |
+|---------|---------|--------|
+| `dk promote preview` | Deploy preview from current branch. | Implemented |
+| `dk promote staging` | Promote to staging (creates approval issue). `--skip-preview` available. | Implemented |
+| `dk promote production` | Promote to production (requires admin role, cross-approval). | Implemented |
+| `dk promote status` | Show promotion state across all stages for current repo. | Implemented |
+| `dk promote rollback <stage>` | Rollback staging or production to previous version. | Implemented |
 
 ### Preview Environments
 
 Commands backed by the [Platform API](platform-api.md), which orchestrates docker-compose on VM101. See [Preview Environments](preview-environments.md).
 
-| Command | Purpose |
-|---------|---------|
-| `dk preview up` | Deploy preview from current repo/branch. Generates subdomain at `<branch>.preview.behaviorlabs.ai`. |
-| `dk preview down <name>` | Tear down a preview and clean up resources |
-| `dk preview list` | Show all active preview deployments with URLs and status |
-| `dk preview logs <name>` | Stream logs from a preview's services |
+| Command | Purpose | Status |
+|---------|---------|--------|
+| `dk preview up` | Deploy preview from current repo/branch. Options: `--name`, `--ttl`, `--domain`, `--doppler-config`. | Implemented |
+| `dk preview down <name>` | Tear down a preview and clean up resources. | Implemented |
+| `dk preview list` | Show all active preview deployments with URLs and status. | Implemented |
+| `dk preview logs <name>` | Stream logs from a preview's services. Options: `--service`, `--tail`. | Implemented |
+
+### Data Metering
+
+Commands backed by the [Platform API](platform-api.md) data router, managing consumer API keys for [dk-data-fe](https://github.com/data-kinetic/dk-data-fe).
+
+| Command | Purpose | Status |
+|---------|---------|--------|
+| `dk data keys create` | Create a consumer API key. Options: `--app`, `--schemas`, `--rpm`, `--tier`. | Implemented |
+| `dk data keys list` | List all consumer keys with usage stats. | Implemented |
+| `dk data keys rotate <alias>` | Rotate a key (24h grace period for old key). | Implemented |
+| `dk data keys update <alias>` | Update key config — rate limits, schemas, tier. | Implemented |
+| `dk data keys revoke <alias>` | Revoke a consumer key immediately. | Implemented |
+| `dk data usage [alias]` | Show usage metrics. Options: `--from`, `--to`. | Implemented |
+| `dk data schemas` | List available schemas and access tiers. | Implemented |
+| `dk data limits` | View rate limits per consumer. | Implemented |
+
+### LLM Management
+
+Commands backed by the [Platform API](platform-api.md), which proxies to [LiteLLM](litellm.md).
+
+| Command | Purpose | Status |
+|---------|---------|--------|
+| `dk llm keys list` | List all virtual keys with budgets and usage stats. | Implemented |
+| `dk llm keys create` | Create a virtual key. Options: `--alias`, `--budget`, `--models`. | Implemented |
+| `dk llm keys delete <key_id>` | Delete (revoke) an LLM API key. | Implemented |
+| `dk llm models` | List available models from all configured providers. | Implemented |
+| `dk llm spend` | Show spend data across all keys. | Implemented |
+
+### Labels & Governance
+
+| Command | Purpose | Status |
+|---------|---------|--------|
+| `dk labels sync` | Show label taxonomy and dry-run check for current repo. | Implemented |
+| `dk labels sync --apply` | Create/update labels to match the taxonomy. | Implemented |
+| `dk labels sync --org --apply` | Sync labels across all repos in the `data-kinetic` org. | Implemented |
+| `dk labels audit` | Audit label compliance across all repos. | Implemented |
 
 ### Plugin System
 
-| Command | Purpose |
-|---------|---------|
-| `dk self-update` | Check for and install the latest dk binary from GitHub Releases |
-| `dk skills list` | Show available skills from the registry and their install status |
-| `dk skills install <name>` | Download and install a skill from the [git-backed registry](https://github.com/data-kinetic/dk-alchemy/tree/main/packages/dk-skills) |
-| `dk skills update` | Update all installed skills to latest versions |
-| `dk hooks list` | Show available hooks and their install status |
-| `dk hooks install <name>` | Download and install a hook from the registry |
-| `dk hooks update` | Update all installed hooks |
-| `dk doctor` | Diagnose dk installation, configuration, and connectivity to Platform API |
+| Command | Purpose | Status |
+|---------|---------|--------|
+| `dk self-update` | Check for and install the latest dk binary. Options: `--check`, `--version`, `--channel`. | Implemented |
+| `dk plugin install` | Download and install skills, agents, and hooks from the registry. | Implemented |
+| `dk plugin update` | Update all installed plugins. `--check` for dry-run. | Implemented |
 
-### Infrastructure
+### Local Development (Planned)
 
-| Command | Purpose |
-|---------|---------|
-| `dk health` | Run full infrastructure health check — K3s nodes, ArgoCD sync, storage pools, edge LBs, VMs, Platform API, LiteLLM |
-| `dk health --cluster` | Check K3s cluster status (nodes, pods, storage) via SSH to k3s-master-1 |
-| `dk health --preview` | Check VM101 preview stack health (containers, disk, load) via health endpoint |
-| `dk health --platform` | Check Platform API health and readiness at dk.datakinetic.com |
-| `dk health --litellm` | Check LiteLLM proxy connectivity and model availability |
-| `dk ssh <target>` | SSH shortcut to infrastructure targets (penguin, krang, k3s, k3s-slave, litellm, preview, phantom, venom) |
-| `dk kubectl <args>` | Proxy kubectl commands to K3s master via SSH jump host |
+| Command | Purpose | Status |
+|---------|---------|--------|
+| `dk up` | Start local dev environment via docker-compose with Doppler secrets injection. | Planned |
+| `dk down` | Stop and clean up local environment. | Planned |
+| `dk logs [service]` | Stream logs from local services. | Planned |
+| `dk status` | Show running services, health checks, and port mappings. | Planned |
 
-### Cross-Repo Operations
+### Secrets (Planned)
 
-| Command | Purpose |
-|---------|---------|
-| `dk status` | Show cross-repo dashboard — milestones, P0 issues, blocked work, phase gate status across dk-alchemy, dk-clusters, dk-template |
-| `dk status <phase>` | Show status for a specific phase (0-3) |
-| `dk notify <message>` | Send coordination message to Slack (#dk-infrastructure channel) |
-| `dk notify dm <message>` | Send DM to Nick King for escalations/blockers |
+| Command | Purpose | Status |
+|---------|---------|--------|
+| `dk secrets setup` | Initialize Doppler project structure for the current repo. | Planned |
+| `dk secrets pull` | Pull secrets from Doppler `dev` config into `.env`. | Planned |
+| `dk secrets push <key> <value>` | Set a secret in the current Doppler config. | Planned |
+| `dk secrets list` | List secret keys (values masked). | Planned |
+
+### Observability (Planned)
+
+| Command | Purpose | Status |
+|---------|---------|--------|
+| `dk observe init` | Add observability package, generate scaffolds. | Planned |
+| `dk observe dashboard <service>` | Generate Grafana dashboard JSON. | Planned |
+| `dk observe alert <service>` | Generate alert rule YAML. | Planned |
+| `dk observe validate` | Validate dashboards and alerts against conventions. | Planned |
+
+### Standards & Compliance (Planned)
+
+| Command | Purpose | Status |
+|---------|---------|--------|
+| `dk check` | Run standards compliance checks locally. | Planned |
+| `dk check --tier <n>` | Run checks for a specific tier only. | Planned |
+| `dk check --fix` | Auto-fix issues where possible. | Planned |
+
+### Infrastructure (Planned)
+
+| Command | Purpose | Status |
+|---------|---------|--------|
+| `dk health` | Full infrastructure health check. | Planned |
+| `dk ssh <target>` | SSH shortcut to infrastructure targets. | Planned |
+| `dk kubectl <args>` | Proxy kubectl commands to K3s master via SSH jump. | Planned |
+
+### Cross-Repo Operations (Planned)
+
+| Command | Purpose | Status |
+|---------|---------|--------|
+| `dk status` | Cross-repo dashboard — milestones, P0 issues, blocked work. | Planned |
+| `dk notify <message>` | Send coordination message to Slack. | Planned |
 
 ## Configuration
 
@@ -132,24 +159,34 @@ services:
     port: 3000
   - name: worker
     port: 3001
-doppler:
-  project: bla-applications
+promotion:
+  staging:
+    approvers: [nick]
+  production:
+    approvers: [nick]
+    require_cross_approval: true
 ```
 
 Global config lives in `~/.dk/config.yaml`:
 
 ```yaml
-doppler_token: dp.st.xxx          # Or use DOPPLER_TOKEN env var
-github_org: data-kinetic
-default_runner: standard
-api_url: https://dk.datakinetic.com  # Platform API base URL
-api_token: dk_...                    # Personal API token (for dk llm, dk preview, dk labels sync --org)
+auth:
+  token: dk_clerk_...             # Clerk session token (set by dk login)
+  api_key: dk_...                 # API key (alternative to Clerk)
+  user: nick@datakinetic.com
+  role: admin
+  expires_at: "2026-04-01T00:00:00Z"
+  refresh_token: "..."
 
-# Infrastructure
-ssh_jump_host: penguin           # Jump host for K3s/edge LB access
-k3s_master: 10.0.0.11           # K3s master IP
-preview_host: 192.168.10.51     # VM101 preview stack
-litellm_host: 192.168.10.50     # LiteLLM proxy
+api_url: https://dk.datakinetic.com  # Platform API base URL
+github_org: data-kinetic
+doppler_token: dp.st.xxx            # Or use DOPPLER_TOKEN env var
+
+# Infrastructure (for dk health, dk ssh — planned)
+ssh_jump_host: penguin
+k3s_master: 10.0.0.11
+preview_host: 192.168.10.51
+litellm_host: 192.168.10.50
 ```
 
 ## Architecture
@@ -159,42 +196,30 @@ dk-alchemy/src/dk-cli/
 ├── src/
 │   ├── index.ts                   # CLI entry point (commander)
 │   ├── commands/
-│   │   ├── init.ts                # dk init
+│   │   ├── create.ts              # dk init (alias: dk create)
+│   │   ├── adopt.ts               # dk adopt
 │   │   ├── onboard.ts             # dk onboard
-│   │   ├── up.ts                  # dk up
-│   │   ├── down.ts                # dk down
-│   │   ├── logs.ts                # dk logs
-│   │   ├── status.ts              # dk status
-│   │   ├── secrets.ts             # dk secrets *
-│   │   ├── observe.ts             # dk observe *
-│   │   ├── check.ts               # dk check
-│   │   ├── labels.ts              # dk labels *
-│   │   ├── llm.ts                 # dk llm * (via Platform API)
-│   │   ├── preview.ts             # dk preview * (via Platform API)
-│   │   ├── self-update.ts         # dk self-update
-│   │   ├── skills.ts              # dk skills *
-│   │   ├── hooks.ts               # dk hooks *
+│   │   ├── login.ts               # dk login, dk logout, dk whoami
 │   │   ├── doctor.ts              # dk doctor
-│   │   ├── health.ts             # dk health (infrastructure checks)
-│   │   ├── ssh.ts                # dk ssh <target>
-│   │   ├── kubectl.ts            # dk kubectl proxy
-│   │   ├── status-dashboard.ts   # dk status (cross-repo)
-│   │   └── notify.ts             # dk notify (Slack)
+│   │   ├── promote.ts             # dk promote *
+│   │   ├── preview.ts             # dk preview * (via Platform API)
+│   │   ├── data.ts                # dk data * (via Platform API)
+│   │   ├── llm.ts                 # dk llm * (via Platform API)
+│   │   ├── labels.ts              # dk labels * (via Platform API)
+│   │   ├── plugin.ts              # dk plugin install/update
+│   │   └── self-update.ts         # dk self-update
 │   ├── lib/
-│   │   ├── api-client.ts          # Platform API HTTP client
-│   │   ├── doppler.ts             # Doppler API client
-│   │   ├── docker.ts              # Docker/docker-compose helpers
-│   │   ├── github.ts              # GitHub API (labels, repos, PRs)
-│   │   ├── kustomize.ts           # Kustomize validation
-│   │   ├── standards.ts           # Standards check logic
-│   │   ├── config.ts              # Config file parsing
-│   │   ├── registry.ts            # Skills/hooks registry client
-│   │   ├── ssh.ts                # SSH connection helpers (jump hosts)
-│   │   └── cluster.ts            # K3s cluster health checks
-│   └── templates/                 # Scaffolding templates (copied from dk-template)
+│   │   ├── api-client.ts          # Platform API HTTP client (auth, retry, refresh)
+│   │   ├── auth.ts                # Token resolution, role hierarchy, requireRole()
+│   │   ├── config.ts              # ~/.dk/config.yaml read/write/merge
+│   │   ├── github.ts              # GitHub API (Octokit — issues, labels, repos)
+│   │   ├── standards.ts           # .dk-standards.yaml parsing and validation
+│   │   ├── template.ts            # Placeholder replacement for dk-template scaffolding
+│   │   └── update-checker.ts      # Background version check (24h cache)
+│   └── tests/                     # Test directory (empty — tests planned)
+├── build.ts                       # Bun cross-compilation (4 platform targets)
 ├── package.json
-├── tsconfig.json
-└── build.ts                       # Bun cross-compilation script
+└── tsconfig.json
 ```
 
 ## Skills & Hooks Registry
@@ -228,14 +253,12 @@ Version checking runs in the background on every `dk` invocation. If updates are
 
 | Prefix | Labels | Purpose |
 |--------|--------|---------|
-| `type/` | bug, enhancement, chore, security | Issue classification |
+| `type/` | bug, feature, chore, docs, security, refactor, test, ci | Issue classification |
 | `priority/` | p0, p1, p2, p3 | Urgency (p0 = blocking production) |
-| `status/` | triage, spec-needed, planned, in-progress, blocked, review, done, archived | Workflow state machine |
-| `risk/` | critical, high, medium, low | Risk assessment |
-| `area/` or `surface/` | Repo-specific | Domain area (e.g., `area/architecture` for dk-planning, `surface/api` for product repos) |
-| (none) | epic, needs-decision, duplicate, wontfix, documentation | General-purpose |
+| `status/` | blocked, in-progress, needs-review, ready | Workflow state machine |
+| `risk/` | high, medium, low | Risk assessment |
 
-The label definitions (name, color, description) are stored as a YAML file in dk-cli and used as the source of truth for `dk labels sync`.
+The label definitions (name, color, description) are stored in the Platform API labels router and used as the source of truth for `dk labels sync`.
 
 ## Dependencies
 
@@ -251,7 +274,7 @@ The label definitions (name, color, description) are stored as a YAML file in dk
 
 ## Related Documentation
 
-- [Platform API](platform-api.md) — server-side counterpart (LLM, preview, webhook, label endpoints)
+- [Platform API](platform-api.md) — server-side counterpart (LLM, preview, webhook, label, data endpoints)
 - [LiteLLM](litellm.md) — LLM proxy managed via `dk llm` commands
 - [Preview Environments](preview-environments.md) — preview stack managed via `dk preview` commands
 - [Onboarding](onboarding.md) — the checklist `dk onboard` walks through
