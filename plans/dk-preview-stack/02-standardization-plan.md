@@ -1,6 +1,6 @@
 # 02 — VM101 Preview Stack Standardization Plan
 
-> **Status:** Complete — All phases implemented (2026-03-24)
+> **Status:** In Progress — Phases 0-2 complete, Phase 3 partial (API merged, not end-to-end), Phases 4-5 pending
 > **Priority:** High
 > **Target:** 7 weeks (Phases 0–5)
 > **Depends on:** [Platform API](../dk-alchemy/01-platform-api.md), [dk-cli PRD](../dk-alchemy/12-dk-cli-prd.md)
@@ -17,16 +17,20 @@ VM101 (preview-stack) has drifted far from its intended purpose. What should be 
 | Metric | Value |
 |--------|-------|
 | Docker Compose projects | 15 |
-| Running containers | 59 |
-| Disk usage | 282 GB / 485 GB (59%) |
-| Load average | ~4.3 / 16 cores (stabilized) |
-| GitHub Actions runners | 10 self-hosted |
-| Firewall | UFW active (deny-by-default) |
-| Databases on 0.0.0.0 | 7 Postgres + 4 Redis |
+| Running containers | 56 (live audit 2026-03-24) |
+| Disk usage | 257 GB / 485 GB (53%) |
+| Load average | 0.19 / 16 cores |
+| GitHub Actions runners | 10 self-hosted (1 active for ghost-cal) |
+| Firewall | UFW active (deny-by-default, 8 rules) |
+| Databases on 0.0.0.0 | 0 (all on 127.0.0.1) |
 | Automated cleanup | Hourly TTL + weekly prune + daily archive |
-| Platform API connectivity | Hosts entry set, API not yet deployed |
-| Actual specs | 16 vCPU, 125 GiB RAM |
-| Documented specs | 32 vCPU, 128 GiB RAM |
+| Platform API connectivity | Healthy (returns OK from VM101) |
+| Actual specs | 16 vCPU, 64 GiB RAM allocated (62 GiB usable, balloon min 32 GiB) |
+| Documented specs | 32 vCPU, 128 GiB RAM (was always wrong — Proxmox shows 64 GiB) |
+| API-managed previews | 0 (all 10 metas have `managed: false`) |
+| Unmigrated projects | 2 (ghost-cal, ut-san-antonio-oncology) |
+| Containers in restart loop | 2 (carbon-app, carbon-api) |
+| Unhealthy containers | 1 (surgeo-app) |
 
 ### Products Currently Deployed
 
@@ -98,7 +102,7 @@ docker system prune -af --volumes
 
 ### 0.6 Update Documentation
 
-- Correct `docs/infrastructure.md`: 16 vCPU (not 32), 125 GiB RAM (not 128)
+- Correct `docs/infrastructure.md`: 16 vCPU (not 32), 64 GiB RAM (not 128, and never 125)
 - Correct any other docs referencing wrong VM101 specs
 - Document actual products deployed on VM101
 
@@ -108,7 +112,7 @@ docker system prune -af --volumes
 - [x] `ss -tlnp | grep 0.0.0.0` shows no database ports exposed (0 — all on 127.0.0.1)
 - [x] `df -h /` shows disk usage below 70% (52%)
 - [x] Load average stays below 16 (1.3 / 16 cores)
-- [x] Infrastructure docs reflect actual VM specs (16 vCPU, 125 GiB)
+- [x] Infrastructure docs reflect actual VM specs (16 vCPU, 64 GiB RAM)
 
 ---
 
@@ -209,11 +213,12 @@ find /opt/dk-previews/archive/ -maxdepth 1 -type d -mtime +7 -exec rm -rf {} +
 ### Verification
 
 - [x] `/opt/dk-previews/` directory structure exists with correct ownership
-- [x] All preview projects migrated — 3 to /opt/dk-production/, 10 to /opt/dk-previews/active/
-- [x] Each project has a valid `.preview-meta.json` (13 total)
-- [x] Cleanup script installed with hourly cron
+- [x] Most preview projects migrated — 3 to /opt/dk-production/, 10 to /opt/dk-previews/active/
+- [ ] **2 projects not migrated:** ghost-cal (in `/home/ubuntu/actions-runner-ghost-cal/`), ut-san-antonio-oncology (in `/home/nick/code/`)
+- [x] Each migrated project has a valid `.preview-meta.json` (10 in active/)
+- [x] Cleanup script installed with hourly cron (`/etc/cron.d/dk-preview-cleanup`)
 - [x] Production app decision: keep on VM101 in /opt/dk-production/ (no TTL, no auto-cleanup)
-- [x] 13 backwards-compatible symlinks in /home/ubuntu/code/
+- [x] Backwards-compatible symlinks in /home/ubuntu/code/
 
 ---
 
@@ -306,7 +311,7 @@ services:
 - [x] `proxy_net` shared Docker network created with 19 web-facing containers
 - [x] Network isolation template created at /opt/dk-previews/scripts/network-template.yaml
 - [x] Per-project network isolation applied (16 projects isolated)
-- [ ] SSH key exists in Doppler under `dk-infrastructure/prd` (pending)
+- [ ] SSH key exists in Doppler under `dk-infrastructure/prd` — **P0 blocker for all API→VM101 operations**
 
 ---
 
@@ -401,13 +406,13 @@ POST /dk/v1/webhooks/github
 - [x] Platform API endpoints implemented (previews, webhooks, labels) — PR #342 merged
 - [x] mypy errors fixed — PR #352 merged
 - [x] Image rebuilt with new routers
-- [ ] `POST /dk/v1/previews` creates a working preview accessible via HTTPS
-- [ ] `GET /dk/v1/previews` returns list with correct status for all environments
-- [ ] `DELETE /dk/v1/previews/{name}` tears down containers, removes NPM host, archives directory
-- [ ] `GET /dk/v1/previews/{name}/logs` streams live container logs
-- [ ] TTL enforcement automatically cleans up expired previews within 1 hour
-- [ ] Health endpoint returns accurate VM101 metrics
-- [ ] GitHub webhook creates preview on PR open and removes on PR close
+- [ ] `POST /dk/v1/previews` creates a working preview accessible via HTTPS — **Blocked:** SSH key not in Doppler (`DK_PREVIEW_SSH_KEY_PATH` empty), NPM proxy host not automated, Doppler secrets not injected
+- [ ] `GET /dk/v1/previews` returns list with correct status — returns legacy `managed: false` metas only
+- [ ] `DELETE /dk/v1/previews/{name}` tears down containers, removes NPM host, archives directory — NPM host removal not implemented
+- [ ] `GET /dk/v1/previews/{name}/logs` streams live container logs — not tested end-to-end
+- [ ] TTL enforcement automatically cleans up expired previews — cron runs but all TTLs set to 8760h (1 year)
+- [x] Health endpoint returns accurate VM101 metrics (port 9100 + API `/previews/health`)
+- [ ] GitHub webhook creates preview on PR open and removes on PR close — code exists in webhooks.py but webhook not registered with any repo
 
 ---
 
@@ -553,19 +558,21 @@ Configure repository webhooks (or use a GitHub App) for automatic preview lifecy
 
 ## Success Criteria
 
-| Metric | Baseline | Current | Target |
+| Metric | Baseline | Current (2026-03-24) | Target |
 |--------|----------|---------|--------|
-| Container count | 59 | ~20 | < 20 (after migrating production apps) |
-| Disk usage | 83% | 52% | < 60% |
-| Load average | 111 | 1.3 | < 10 |
+| Container count | 59 | 56 | < 20 (after migrating production apps to K8s) |
+| Disk usage | 83% | 53% | < 60% |
+| Load average | 111 | 0.19 | < 10 |
+| RAM | 125 GiB (wrong) | 64 GiB (62 GiB usable) | Docs corrected — was never 125 GiB |
 | Databases on 0.0.0.0 | 11 | 0 | 0 |
 | Firewall | Inactive | Active (deny-by-default, 8 rules) | Active with deny-by-default |
 | Automated cleanup | None | Hourly TTL + weekly prune + daily archive | Hourly TTL check + weekly prune |
-| Preview creation time | Manual (30+ min) | API-driven (pending CLI) | CLI command (< 5 min) |
+| Preview creation time | Manual (30+ min) | Not functional (API gaps) | CLI command (< 5 min) |
 | Platform API connectivity | Unreachable | Healthy (PR #351) | Healthy |
 | Network isolation | None | 16 projects isolated | Per-project isolation |
 | Grafana dashboard | None | Created (PR #350) | VM101 metrics visible |
 | Lifecycle automation | None | Partial (cleanup + alerts) | Full (PR open → deploy, PR close → teardown) |
+| API-managed previews | 0 | 0 | All new previews API-managed |
 
 ## Timeline
 
@@ -584,4 +591,4 @@ Configure repository webhooks (or use a GitHub App) for automatic preview lifecy
 2. **Runner consolidation** — Can all 10 GitHub Actions runners be replaced by runners in the K3s cluster, or do some workloads require VM101-local execution?
 3. **Wildcard DNS** — Is `*.preview.datakinetic.com` configured to point to VM101? If not, individual DNS records or a wildcard CNAME is needed.
 4. **Resource limits** — What are the per-preview resource limits (CPU, memory, disk)? Suggested: 2 CPU, 4 GiB RAM, 20 GB disk per preview.
-5. **Preview count cap** — Maximum concurrent previews? Suggested: 10 (given 16 vCPU / 125 GiB RAM after freeing production workloads).
+5. **Preview count cap** — Maximum concurrent previews? Suggested: 10-15 (given 16 vCPU / 64 GiB RAM, current config `preview_max_active: 15`).

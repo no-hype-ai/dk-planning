@@ -4,9 +4,9 @@
 
 [`dk-template`](https://github.com/data-kinetic/dk-template) is the GitHub template repository for scaffolding new Data Kinetic product repos. When a developer runs `dk init` or clicks "Use this template", they get a complete, production-ready project structure with GitOps, Kubernetes manifests, CI/CD, monitoring, local development, and dk-alchemy integration — all pre-configured.
 
-## Status: All Plans Complete
+## Status
 
-All 6 implementation plans have been executed and the dk-template repository is fully scaffolded.
+Plans 01-06 (structural scaffold) are complete. Plan 07 (enforcement gaps) addresses security, implementation code, CI/CD integration, and multi-language support gaps identified by auditing the template against `docs/onboarding.md` and real product repos.
 
 ## Plans
 
@@ -18,6 +18,7 @@ All 6 implementation plans have been executed and the dk-template repository is 
 | 04 | [Local Dev & Preview](04-local-dev-and-preview.md) | Complete | docker-compose (local + preview), Doppler setup |
 | 05 | [dk-alchemy PR Gen](05-dk-alchemy-pr-gen.md) | Complete | Bootstrap YAML, contact points, notification policies |
 | 06 | [dk-cli Integration](06-dk-cli-integration.md) | Complete | `dk init` reference implementation |
+| 07 | [Enforcement Gaps](07-enforcement-gaps.md) | Not Started | Security hardening, health code, OTel code, CI/CD integration, multi-language |
 
 ## Execution Order
 

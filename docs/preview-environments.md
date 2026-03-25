@@ -6,13 +6,23 @@ Preview environments allow product repos to deploy branch-based previews accessi
 
 ## Current State
 
-Preview deployments currently run on VM101 (preview-stack) via Nginx Proxy Manager (NPM) with ad-hoc docker-compose projects. As of 2026-03-23, VM101 hosts 15 Docker Compose projects with 63 containers. Ubuntu 22.04.5 LTS running Docker 29.2.1.
+Preview deployments currently run on VM101 (preview-stack) via Nginx Proxy Manager (NPM) with ad-hoc docker-compose projects. As of 2026-03-24, VM101 hosts 15 Docker Compose projects with 56 containers. Ubuntu 22.04.5 LTS running Docker 29.2.1.
 
-**Operational improvements completed (Phase 0):**
-- UFW firewall is active (deny-by-default incoming)
+**Operational improvements completed (Phase 0-2):**
+- UFW firewall is active (deny-by-default incoming, 8 rules)
 - Automated cleanup cron jobs installed (hourly TTL, weekly Docker prune, daily archive cleanup)
 - Health endpoint available at port 9100
-- Disk usage reduced to 59% (282 GB / 485 GB)
+- Disk usage at 53% (257 GB / 485 GB)
+- Databases bound to 127.0.0.1 (no longer on 0.0.0.0)
+- Docker network isolation applied (per-project networks + shared proxy_net)
+- Standard directory layout: `/opt/dk-previews/active/` (10 projects), `/opt/dk-production/` (3 production apps)
+
+**Known issues:**
+- 2 projects not yet migrated to standard directories (ghost-cal, ut-san-antonio-oncology)
+- carbon-5: 2 containers in restart loop (carbon-app, carbon-api)
+- surgeo-app: unhealthy status
+- All preview metas have `managed: false` — no previews are API-managed yet
+- Platform API preview endpoints merged (PR #342) but missing NPM proxy automation and Doppler secrets injection
 
 ### Infrastructure
 
@@ -21,7 +31,7 @@ Preview deployments currently run on VM101 (preview-stack) via Nginx Proxy Manag
 | **VM** | vm101-preview-stack (penguin, VMID 101) |
 | **Cluster IP** | 10.0.0.51 (vmbr1, isolated) |
 | **DMZ IP** | 172.16.100.51 (vmbr2, for edge routing) |
-| **Resources** | 16 vCPU, 125 GiB RAM, 485 GB disk |
+| **Resources** | 16 vCPU, 64 GiB RAM (62 GiB usable, balloon min 32 GiB), 485 GB disk |
 | **Reverse proxy** | Nginx Proxy Manager (port 80) |
 
 ### Domains

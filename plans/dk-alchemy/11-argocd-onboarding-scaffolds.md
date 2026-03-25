@@ -1,8 +1,8 @@
 # ArgoCD Onboarding Scaffolds for Migration Targets
 
 ## Context
-Migration issues for dk-phantom, dk-mercury, dk-data-fe, and agent-mesh are blocked because
-the target repos (DK-OS, carbon-5, lithium-5) lack the `.gitops/`, `k8s/`, and `monitoring/`
+Migration issues for dk-phantom, dk-mercury, and dk-data-fe are blocked because
+the target repos (DK-OS, carbon-5) lack the `.gitops/`, `k8s/`, and `monitoring/`
 directories required for ArgoCD deployment. This document captures the scaffolding generated
 by `dk-template init.sh` for each target repo.
 
@@ -12,20 +12,19 @@ by `dk-template init.sh` for each target repo.
 
 **Status:**
 - Scaffolds were previously generated and stored at `/tmp/` paths — these are **ephemeral and no longer exist**
-- DK-OS, carbon-5, lithium-5 bootstrap files do NOT exist in dk-alchemy's `.gitops/external/` or `.gitops/repositories/`
+- DK-OS, carbon-5 bootstrap files do NOT exist in dk-alchemy's `.gitops/external/` or `.gitops/repositories/`
 - Only the old migration sources (agent-mesh, dk-phantom, dk-mercury, dk-data-fe, behavior-labs-ai, xenon) are registered
 - Issues #319-#322 referenced in migration plan were not found; may need to be created
 
 **To proceed:**
 1. Regenerate scaffolds using the `dk-template init.sh` commands documented below
-2. Submit PRs to target repos (DK-OS, carbon-5, lithium-5)
+2. Submit PRs to target repos (DK-OS, carbon-5)
 3. Submit dk-alchemy PR to add bootstrap files to `.gitops/external/` and `.gitops/repositories/`
 
 ## Important: Existing Workflows
-All three target repos already have `.github/workflows/`. Do NOT overwrite:
+Both target repos already have `.github/workflows/`. Do NOT overwrite:
 - **DK-OS:** build-push.yml, promote.yml, staging-readiness.yml
 - **carbon-5:** deploy.yml
-- **lithium-5:** build-deploy.yml, promote.yml, staging-readiness.yml
 
 The dk-template generates `build-deploy.yaml` and `standards.yaml` workflows. These should
 be reviewed and merged with existing workflows, not dropped in wholesale. The CODEOWNERS
@@ -161,70 +160,9 @@ notification-policies-addition.yaml
 
 ---
 
-## 3. lithium-5 (data-kinetic/lithium-5)
-
-**Migration target for:** agent-mesh
-**Product:** lithium-5 | **Team:** dk-engineering | **Repo:** lithium-5
-**Services:** api, worker-claude
-**Namespaces:** lithium-5-prod, lithium-5-staging
-
-### Generated command
-```bash
-./scripts/init.sh --product lithium-5 --team dk-engineering --repo-name lithium-5 \
-  --service api --service worker-claude
-```
-
-### Files to add to lithium-5 repo
-```
-.gitops/
-  lithium-5-root-app-prod.yaml
-  lithium-5-root-app-staging.yaml
-  local/apps/.env.example
-  local/apps/docker-compose.yaml
-  prod/apps/00-project.yaml
-  prod/apps/doppler-secrets.yaml
-  prod/apps/api.yaml
-  prod/apps/worker-claude.yaml
-  staging/apps/00-project.yaml
-  staging/apps/doppler-secrets.yaml
-  staging/apps/api.yaml
-  staging/apps/worker-claude.yaml
-
-k8s/apps/
-  doppler-secrets/base/doppler-secret.yaml
-  doppler-secrets/base/kustomization.yaml
-  doppler-secrets/overlays/prod/kustomization.yaml
-  doppler-secrets/overlays/staging/kustomization.yaml
-  api/base/{deployment,kustomization,service}.yaml
-  api/overlays/{prod,staging}/kustomization.yaml
-  worker-claude/base/{deployment,kustomization,service}.yaml
-  worker-claude/overlays/{prod,staging}/kustomization.yaml
-
-monitoring/
-  alerts/{api,worker-claude}.yaml
-  dashboards/{api,worker-claude}-overview.json
-```
-
-### dk-alchemy PR files
-```
-.gitops/external/lithium-5-prod.yaml
-.gitops/external/lithium-5-staging.yaml
-.gitops/repositories/lithium-5-bootstrap.yaml
-contact-points-addition.yaml
-notification-policies-addition.yaml
-```
-
-### Post-scaffold customization needed
-- api: NestJS from agent-mesh, port 3000 likely correct
-- worker-claude: agent worker process, may not need HTTP service, review if service.yaml is needed
-- Container images: ghcr.io/data-kinetic/lithium-5/{api,worker-claude}
-- Configure Doppler project: lithium-5-applications
-
----
-
 ## dk-alchemy Bootstrap PRs (Combined)
 
-Three separate PRs should be submitted to dk-alchemy to register each target repo:
+Two separate PRs should be submitted to dk-alchemy to register each target repo:
 
 ### PR 1: DK-OS bootstrap
 - `ADD .gitops/external/dk-os-prod.yaml`
@@ -242,14 +180,6 @@ Three separate PRs should be submitted to dk-alchemy to register each target rep
 - `MODIFY grafana/provisioning/alerting/contact-points.yaml` (add carbon-5-slack)
 - `MODIFY grafana/provisioning/alerting/notification-policies.yaml` (add carbon-5 route)
 
-### PR 3: lithium-5 bootstrap
-- `ADD .gitops/external/lithium-5-prod.yaml`
-- `ADD .gitops/external/lithium-5-staging.yaml`
-- `ADD .gitops/repositories/lithium-5-bootstrap.yaml`
-- `MODIFY .gitops/repositories/kustomization.yaml` (add lithium-5-bootstrap.yaml)
-- `MODIFY grafana/provisioning/alerting/contact-points.yaml` (add lithium-5-slack)
-- `MODIFY grafana/provisioning/alerting/notification-policies.yaml` (add lithium-5 route)
-
 These can be combined into a single PR if preferred.
 
 ---
@@ -259,16 +189,14 @@ These can be combined into a single PR if preferred.
 1. Submit dk-alchemy bootstrap PR(s) -- can be done immediately
 2. PR scaffold files into DK-OS -- unblocks dk-phantom and dk-mercury migrations
 3. PR scaffold files into carbon-5 -- unblocks dk-data-fe migration
-4. PR scaffold files into lithium-5 -- unblocks agent-mesh migration
-5. Customize deployment.yaml files per service (ports, images, health checks)
-6. Set up Doppler projects for each target repo
-7. Verify ArgoCD picks up each repo after merge
+4. Customize deployment.yaml files per service (ports, images, health checks)
+5. Set up Doppler projects for each target repo
+6. Verify ArgoCD picks up each repo after merge
 
 ## Scaffold Source Files
 
 Generated scaffolds are stored at:
 - `/tmp/dk-os-scaffold/` -- DK-OS (web, phantom, mercury-api)
 - `/tmp/carbon5-scaffold/` -- carbon-5 (api, worker)
-- `/tmp/lithium5-scaffold/` -- lithium-5 (api, worker-claude)
 
 These were generated from `data-kinetic/dk-template` using `scripts/init.sh`.

@@ -2,14 +2,14 @@
 
 ## Overview
 
-An automated PR review service that evaluates pull requests against platform standards, security policies, and code quality rubrics. Runs as a **separate service on lithium-5** (krang GPUs), receiving PR events from the [webhook service](self-hosted-runners-and-webhooks.md) and posting reviews back to GitHub.
+An automated PR review service that evaluates pull requests against platform standards, security policies, and code quality rubrics. Runs as a **separate service within DK-OS agent-mesh** (krang GPUs), receiving PR events from the [webhook service](self-hosted-runners-and-webhooks.md) and posting reviews back to GitHub.
 
 ## Architecture Decision
 
-The PR review service is a **separate service in lithium-5**, not an extension of the webhook service. Rationale:
+The PR review service is a **separate service in DK-OS agent-mesh**, not an extension of the webhook service. Rationale:
 
 - PR review requires **GPU inference** (long-running, resource-heavy) — fundamentally different from the webhook service's lightweight event routing
-- Fits lithium-5's role as the **agent execution fabric** running on krang's A100 GPUs
+- Fits DK-OS agent-mesh's role as the **agent execution fabric** running on krang's A100 GPUs
 - Decouples review latency from webhook processing — a slow review doesn't block kustomize updates or Slack notifications
 
 ## Event Flow
@@ -17,7 +17,7 @@ The PR review service is a **separate service in lithium-5**, not an extension o
 ```
 GitHub PR event (opened/synchronize on staging branch)
   → webhook-service (dk-alchemy): validates HMAC, routes PR events
-    → lithium-5 pr-critic service (krang): fetches diff, runs evaluation
+    → DK-OS agent-mesh pr-critic service (krang): fetches diff, runs evaluation
       → GitHub PR review (approve/comment/request changes)
 ```
 
@@ -26,20 +26,21 @@ Only PRs targeting **staging branches** are reviewed. Production PRs (release ta
 ## Service Structure
 
 ```
-lithium-5/
-  services/pr-critic/
-    main.py                # FastAPI service
-    critic.py              # CriticBase subclass (DKPlatformCritic)
-    rubrics/
-      security.py          # Secret patterns, auth, injection
-      observability.py     # Instrumentation, health endpoints, error handling
-      standards.py         # Platform standards (auto-generated from Capability B definitions)
-      code_quality.py      # Abstractions, naming, test coverage
-    config.py              # Pydantic settings
-    github_client.py       # GitHub App API client for posting reviews
-    prompts/
-      system.md            # System prompt for the review model
-      rubric_template.md   # Rubric evaluation template
+DK-OS/
+  apps/agent-mesh/
+    services/pr-critic/
+      main.py                # FastAPI service
+      critic.py              # CriticBase subclass (DKPlatformCritic)
+      rubrics/
+        security.py          # Secret patterns, auth, injection
+        observability.py     # Instrumentation, health endpoints, error handling
+        standards.py         # Platform standards (auto-generated from Capability B definitions)
+        code_quality.py      # Abstractions, naming, test coverage
+      config.py              # Pydantic settings
+      github_client.py       # GitHub App API client for posting reviews
+      prompts/
+        system.md            # System prompt for the review model
+        rubric_template.md   # Rubric evaluation template
 ```
 
 ## [OpenHands](https://docs.all-hands.dev/) SDK Integration
@@ -123,7 +124,7 @@ Checks for:
 
 ## Model
 
-Self-hosted on krang via vLLM. Configurable — default: a strong code model routed through lithium-5's existing LiteLLM proxy.
+Self-hosted on krang via vLLM. Configurable — default: a strong code model routed through DK-OS's LiteLLM proxy (via dk-litellm at `llm.behaviorlabs.ai`).
 
 ```
 CRITIC_MODEL=qwen2.5-coder-32b-instruct
@@ -136,21 +137,21 @@ Can be changed to any model available via LiteLLM without service redeployment.
 ### K8s Manifests
 
 ```
-lithium-5/
-  k8s/apps/pr-critic/
+DK-OS/
+  k8s/apps/agent-mesh/
     base/
-      deployment.yaml      # 1 replica, GPU resource request (1x A100)
-      service.yaml         # ClusterIP :8000
+      deployment.yaml      # Includes pr-critic as a separate container or service
+      service.yaml         # ClusterIP :8000 (pr-critic), :8765 (agent-mcp), :8766 (openclaw)
       kustomization.yaml
     overlays/prod/
-      kustomization.yaml   # nodeAffinity: krang
+      kustomization.yaml   # nodeAffinity: krang for GPU workloads
 ```
 
 The deployment uses `nodeAffinity` to schedule on krang (GPU node) and requests 1x A100 GPU via `nvidia.com/gpu: 1` resource.
 
 ### [Doppler](https://docs.doppler.com/) Configuration
 
-Add to lithium-5's Doppler project (`lithium5-applications`):
+Add to DK-OS's Doppler project (`dk-os`, config `prd_main`):
 
 | Key | Value | Purpose |
 |-----|-------|---------|
@@ -160,13 +161,13 @@ Add to lithium-5's Doppler project (`lithium5-applications`):
 | `CRITIC_OBSERVABILITY_WEIGHT` | `0.20` | Observability rubric weight |
 | `CRITIC_STANDARDS_WEIGHT` | `0.25` | Standards rubric weight |
 | `CRITIC_CODE_QUALITY_WEIGHT` | `0.25` | Code quality rubric weight |
-| `CRITIC_ENABLED_REPOS` | `behavior-labs-ai,carbon-5,lithium-5,DK-OS` | Repos that receive automated reviews |
+| `CRITIC_ENABLED_REPOS` | `behavior-labs-ai,carbon-5,DK-OS` | Repos that receive automated reviews |
 | `GITHUB_APP_ID` | (from GitHub App) | For posting reviews |
 | `GITHUB_APP_PRIVATE_KEY` | (from GitHub App) | For posting reviews |
 
 ### Webhook Service Handler
 
-The webhook service in dk-alchemy includes a handler that forwards PR events to lithium-5. See [Self-Hosted Runners & Webhook Service](self-hosted-runners-and-webhooks.md#pr-event-forwarding) for the handler implementation.
+The webhook service in dk-alchemy includes a handler that forwards PR events to DK-OS agent-mesh. See [Self-Hosted Runners & Webhook Service](self-hosted-runners-and-webhooks.md#pr-event-forwarding) for the handler implementation.
 
 ## Integration with Standards Compliance
 
@@ -193,6 +194,6 @@ When the critic identifies recurring patterns across PRs (e.g., many PRs missing
 - [Self-Hosted Runners & Webhook Service](self-hosted-runners-and-webhooks.md) — webhook service that routes PR events
 - [Standards Compliance](standards-compliance.md) — shared standards definitions consumed by the critic
 - [Security & Compliance](security-and-compliance.md) — security policies enforced by the security rubric
-- [Platform Overview](platform-overview.md) — lithium-5 as the agent execution fabric
+- [Platform Overview](platform-overview.md) — DK-OS agent-mesh as the agent execution fabric
 - [Observability](observability.md) — observability requirements enforced by the observability rubric
 - [CI/CD Pipelines](ci-cd-pipelines.md) — CI context for PR reviews

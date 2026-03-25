@@ -53,7 +53,7 @@ Data Kinetic runs a self-hosted [Kubernetes](https://kubernetes.io/docs/) platfo
 | VM | IP | Resources | Role |
 |----|-----|-----------|------|
 | vm100-litellm | 192.168.10.50 | 16 vCPU, 64GB RAM | [LiteLLM](litellm.md) proxy — LLM gateway for all products |
-| vm101-preview-stack | 10.0.0.51 | 16 vCPU, 125 GiB RAM, 485 GB disk | [Preview environments](preview-environments.md) — docker-compose previews via NPM |
+| vm101-preview-stack | 10.0.0.51 | 16 vCPU, 64 GiB RAM (balloon 32 GiB), 485 GB disk | [Preview environments](preview-environments.md) — docker-compose previews via NPM |
 | vm220-vllm | 192.168.10.101 | GPU passthrough | vLLM model serving (not HA) |
 
 ### VIPs (Keepalived)

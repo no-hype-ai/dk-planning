@@ -42,10 +42,10 @@ DK-OS uses an app-switcher pattern supporting multiple business apps within one 
 
 | # | Plan | Priority | Status | Remaining Work | Dependencies |
 |---|------|----------|--------|---------------|-------------|
-| 01 | [K8s Migration](01-k8s-migration.md) | **P0** | Not Started | Full Docker Compose → K8s/ArgoCD migration | dk-template scaffold, dk-alchemy bootstrap |
+| 01 | [K8s Migration](01-k8s-migration.md) | **P0** | **Phase 1 Done** | K8s manifests scaffolded, .dk-standards.yaml created, docker-compose.preview.yaml ready. Remaining: ArgoCD bootstrap, DNS, cutover | dk-alchemy bootstrap PR |
 | 02 | [Platform Integration](02-platform-integration.md) | P1 | Not Started | Sentry removal, observability pkg, shared CI, standards | dk-alchemy/04, /05, /06 |
 | 03 | [Infrastructure Services](03-infrastructure-services.md) | P1 | Not Started | Data store decisions (PostgreSQL, Redis, SeaweedFS, LiteLLM) | Plan 01 (informs migration) |
-| 04 | [Agent Mesh](04-agent-mesh.md) | P2 | Not Started | Python service K8s deployment, MCP ingress, database isolation | Plan 01 (K8s first) |
+| 04 | [Agent Mesh](04-agent-mesh.md) | P2 | **Scaffolded** | K8s manifests generated (port 8765), Python Dockerfile template ready. Remaining: Docker orchestrator migration | Plan 01 (K8s first) |
 | 05 | [Testing & Quality](05-testing-and-quality.md) | P2 | Not Started | Coverage targets, E2E, API tests, multi-tenant isolation tests | None (independent) |
 | 06 | [Feature Roadmap](06-feature-roadmap.md) | — | In Progress | App-switcher expansion, stage tracking | Product-driven |
 | 07 | [Security & Compliance](07-security-and-compliance.md) | P1 | Not Started | Org isolation audit, webhook security, agent-mesh sandboxing | dk-alchemy/03, dk-compliance-v2 |

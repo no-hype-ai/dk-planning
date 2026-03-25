@@ -4,7 +4,7 @@
 
 This document is the checklist for adding a new product repo to the Data Kinetic platform. It covers GitOps integration, CI/CD, observability, analytics, secrets, and issue governance.
 
-Repos pending onboarding: dk-compliance-v2, DK-OS, carbon-5, lithium-5.
+Repos pending onboarding: dk-compliance-v2, DK-OS, carbon-5.
 
 ## Prerequisites
 

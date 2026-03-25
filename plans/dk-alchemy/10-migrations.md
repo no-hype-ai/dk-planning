@@ -1,7 +1,7 @@
 # Repository Consolidation Migrations
 
 ## Context
-6 single-purpose repos are being consolidated into 3 platforms + 1 fabric. Each migration moves services, databases, and GitOps config from a deprecated repo into its target. dk-alchemy needs cleanup after each migration (remove external app bootstraps, namespaces, DopplerSecrets).
+Single-purpose repos are being consolidated into 2 target platforms (DK-OS, carbon-5). Each migration moves services, databases, and GitOps config from a deprecated repo into its target. dk-alchemy needs cleanup after each migration (remove external app bootstraps, namespaces, DopplerSecrets).
 
 ## ⚠️ SAFETY GATE — MANDATORY PRE-DELETION CHECKLIST
 
@@ -31,16 +31,16 @@
 - dk-phantom → DK-OS (smallest, recommended first)
 - dk-mercury → DK-OS
 - dk-data-fe → carbon-5
-- agent-mesh → lithium-5
+- ~~agent-mesh → lithium-5~~ **CANCELLED** — agent-mesh is now DK-OS agent-mesh (`apps/agent-mesh/` in DK-OS repo); no migration needed
 - dk-alchemy cleanup per migration (bootstrap removal, namespace cleanup)
-- New repo onboarding (carbon-5, DK-OS, lithium-5, dk-compliance-v2)
+- New repo onboarding (carbon-5, DK-OS, dk-compliance-v2)
 
 ## Dependencies
-- Target repos must be ready to receive code (DK-OS, carbon-5, lithium-5 onboarding)
+- Target repos must be ready to receive code (DK-OS, carbon-5 onboarding)
 - dk-template helps scaffold the target repo structure
 
 ## Existing Work
-- dk-planning docs: migrations/README.md, 4 individual migration plans
+- dk-planning docs: migrations/README.md, 3 active migration plans (agent-mesh migration cancelled)
 - dk-alchemy: .gitops/external/ has bootstrap apps for all 6 deprecated repos
 - dk-alchemy specs: 008-dk-data-platform-integration, 011-dk-data-stabilization
 
@@ -48,7 +48,6 @@
 1. **dk-phantom → DK-OS** (smallest migration, good pilot)
 2. **dk-mercury → DK-OS** (NestJS, same target as dk-phantom)
 3. **dk-data-fe → carbon-5** (Python, complex data pipeline)
-4. **agent-mesh → lithium-5** (largest, 25+ tables, MCP gateway)
 
 ## Per-Migration Steps (template)
 
@@ -99,11 +98,13 @@
 - MODIFY: grafana/dashboards/applications/ (update dk-data dashboard references)
 - MODIFY: grafana/alerts/dk-data.yaml (update service labels)
 
-### agent-mesh → lithium-5
+### agent-mesh → ~~lithium-5~~ CANCELLED
+> agent-mesh has been superseded by DK-OS agent-mesh (`apps/agent-mesh/` in the DK-OS repo).
+> No migration needed. The agent-mesh bootstrap files in dk-alchemy should still be cleaned up:
 - DELETE: .gitops/external/agent-mesh-prod.yaml, agent-mesh-staging.yaml
 - DELETE: .gitops/repositories/agentmesh-bootstrap.yaml
 
-### New Repo Onboarding (carbon-5, DK-OS, lithium-5, dk-compliance-v2)
+### New Repo Onboarding (carbon-5, DK-OS, dk-compliance-v2)
 - CREATE: .gitops/external/<repo>-prod.yaml, <repo>-staging.yaml per repo
 - CREATE: .gitops/repositories/<repo>-bootstrap.yaml per repo
 - MODIFY: .gitops/repositories/kustomization.yaml (add new repos)
@@ -121,4 +122,4 @@
 **Migration approach:**
 - **Option A (Recommended): Big-bang per repo** — Move everything at once, cut over in one deployment. Simpler, avoids long-running dual-state.
 - **Option B: Incremental per service** — Move services one at a time. Lower risk per change but creates extended period of split state.
-**Recommendation:** Option A for smaller migrations (dk-phantom, dk-mercury). Option B for larger ones (dk-data-fe, agent-mesh) where the service count justifies incremental moves.
+**Recommendation:** Option A for smaller migrations (dk-phantom, dk-mercury). Option B for dk-data-fe where the service count justifies incremental moves.
