@@ -110,3 +110,10 @@ When committing changes to docs/:
 - Verify all internal links resolve (relative paths to other docs)
 - Verify external repo links are valid GitHub URLs
 - Check that the tooling roadmap in docs/README.md stays sorted by priority
+
+## Active Technologies
+- Python 3.11 (Platform API), TypeScript/Node 20 (dk-cli), Bash (migration scripts, drift detection) + FastAPI, asyncssh, Commander.js, Docker Compose, Doppler CLI, NPM API (001-preview-stack-validation)
+- Docker volumes (Postgres, Redis, MinIO) on VM101; `.preview-meta.json` metadata files (001-preview-stack-validation)
+
+## Recent Changes
+- 001-preview-stack-validation: Added Python 3.11 (Platform API), TypeScript/Node 20 (dk-cli), Bash (migration scripts, drift detection) + FastAPI, asyncssh, Commander.js, Docker Compose, Doppler CLI, NPM API
