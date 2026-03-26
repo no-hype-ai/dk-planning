@@ -84,20 +84,23 @@ The same error and trace data currently flows to **both** systems:
 
 ## Sentry Migration Plan
 
-### Phase 1 — Parallel (No Removals)
+**Epic:** [dk-planning#17](https://github.com/data-kinetic/dk-planning/issues/17) | **Detailed plan:** [plans/behavior-labs-ai/sentry-grafana-migration.md](../plans/behavior-labs-ai/sentry-grafana-migration.md)
 
-- Add `service.version` (Git SHA) and `deployment.environment` to OTel resource attributes
-- Add `user.id` and `user.email` to OTel context (replaces Sentry user tagging)
-- Add Grafana alert rules mirroring Sentry's error alert config
+### Phase 1 — Parallel (No Removals) `🔄 In Progress`
+
+- Add `service.version` (Git SHA) and `deployment.environment` to OTel resource attributes ([behavior-labs-ai#780](https://github.com/data-kinetic/behavior-labs-ai/issues/780))
+- Add `user.id` and `user.email` to OTel context — replaces Sentry user tagging ([behavior-labs-ai#781](https://github.com/data-kinetic/behavior-labs-ai/issues/781))
+- Add Grafana alert rules mirroring Sentry's error alert config ([dk-alchemy#432](https://github.com/data-kinetic/dk-alchemy/issues/432))
+- Add Grafana → GitHub issue creation contact point ([dk-alchemy#431](https://github.com/data-kinetic/dk-alchemy/issues/431))
 - Run both systems in parallel; validate Grafana catches everything Sentry does
 
-### Phase 2 — Remove Sentry
+### Phase 2 — Remove Sentry `Planned`
 
-- Remove `Sentry.captureException()` from `parseError()` — keep as OTel-only error handler
-- Remove `@sentry/nextjs`, `@sentry/nestjs`, `@sentry/profiling-node` dependencies
+- Remove `Sentry.captureException()` from `parseError()` — keep as OTel-only error handler ([behavior-labs-ai#777](https://github.com/data-kinetic/behavior-labs-ai/issues/777))
+- Remove `@sentry/nextjs`, `@sentry/nestjs`, `@sentry/profiling-node` dependencies ([behavior-labs-ai#778](https://github.com/data-kinetic/behavior-labs-ai/issues/778), [#779](https://github.com/data-kinetic/behavior-labs-ai/issues/779))
 - Remove `withSentry()` Next.js config wrapper, `/monitoring` tunnel route
 - Remove `useSentryUser()` hook
-- Remove Sentry env vars from [Doppler](https://docs.doppler.com/)
+- Remove Sentry env vars from [Doppler](https://docs.doppler.com/) ([behavior-labs-ai#782](https://github.com/data-kinetic/behavior-labs-ai/issues/782))
 
 ### Phase 3 — Replace Sentry-Only Features
 
