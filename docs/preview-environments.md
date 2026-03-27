@@ -6,23 +6,30 @@ Preview environments allow product repos to deploy branch-based previews accessi
 
 ## Current State
 
-Preview deployments currently run on VM101 (preview-stack) via Nginx Proxy Manager (NPM) with ad-hoc docker-compose projects. As of 2026-03-24, VM101 hosts 15 Docker Compose projects with 56 containers. Ubuntu 22.04.5 LTS running Docker 29.2.1.
+As of 2026-03-26, all 12 preview projects are **API-managed** (`managed: true`) via the Platform API and deployed to `/opt/dk-previews/active/`. VM101 hosts 12 preview projects + 2 production apps, running Ubuntu 22.04.5 LTS with Docker 29.2.1.
 
-**Operational improvements completed (Phase 0-2):**
-- UFW firewall is active (deny-by-default incoming, 8 rules)
+**Platform API integration (Phase 3) — operational:**
+- All preview CRUD endpoints functional (`POST/GET/DELETE /dk/v1/previews`)
+- NPM proxy hosts auto-registered on `*.preview.datakinetic.com` for all 12 projects
+- Doppler secrets injection working (falls back to plain compose for apps without Doppler)
+- Port allocation range 10000-10999 with lock file mechanism
+- dk-cli commands (`dk preview up/down/list/logs/drift`) all implemented
+- Traefik IngressRoutes deployed for `*.preview.datakinetic.com` and `*.preview.behaviorlabs.ai`
+
+**Infrastructure hardening (Phase 0-2) — complete:**
+- UFW firewall active (deny-by-default incoming, 8 rules)
 - Automated cleanup cron jobs installed (hourly TTL, weekly Docker prune, daily archive cleanup)
-- Health endpoint available at port 9100
-- Disk usage at 53% (257 GB / 485 GB)
-- Databases bound to 127.0.0.1 (no longer on 0.0.0.0)
-- Docker network isolation applied (per-project networks + shared proxy_net)
-- Standard directory layout: `/opt/dk-previews/active/` (10 projects), `/opt/dk-production/` (3 production apps)
+- Health endpoint at port 9100
+- Disk usage at 20% (96 GB / 485 GB)
+- Databases bound to 127.0.0.1
+- Docker network isolation (per-project networks + shared proxy_net)
+- Standard directory layout: `/opt/dk-previews/active/` (12 projects), `/opt/dk-production/` (2 production apps)
 
 **Known issues:**
-- 2 projects not yet migrated to standard directories (ghost-cal, ut-san-antonio-oncology)
-- carbon-5: 2 containers in restart loop (carbon-app, carbon-api)
-- surgeo-app: unhealthy status
-- All preview metas have `managed: false` — no previews are API-managed yet
-- Platform API preview endpoints merged (PR #342) but missing NPM proxy automation and Doppler secrets injection
+- rose-and-berg: `docker-compose.preview.yaml` incomplete (missing app/api services — only db and redis)
+- Legacy NPM proxy hosts with old domain names (`.behaviorlabs.ai`, `sniper.`, `ghost.`) still exist — can be cleaned up
+- GitHub webhooks not yet registered on product repos (auto-preview on PR not active)
+- Legacy GitHub Actions self-hosted runners still running on VM101 (~19 GB disk)
 
 ### Infrastructure
 
@@ -52,31 +59,37 @@ External client → DNS → UDM WAN DNAT
   → Docker container (host-based routing)
 ```
 
-## Target State
-
-Standardize preview deployments via the [Platform API](platform-api.md) and [dk-cli](dk-cli.md):
+## How It Works
 
 ### dk-cli Commands
 
 | Command | Purpose |
 |---------|---------|
-| `dk preview up` | Deploy preview from current repo/branch. Triggers Platform API which orchestrates docker-compose on VM101. |
+| `dk preview up` | Deploy preview from current repo/branch. Options: `--name`, `--ttl`, `--domain`, `--doppler-config`. |
 | `dk preview down <name>` | Tear down a preview and clean up resources |
 | `dk preview list` | Show all active preview deployments with URLs and status |
-| `dk preview logs <name>` | Stream logs from a preview's services |
+| `dk preview logs <name>` | Stream logs from a preview's services. Options: `--service`, `--tail`. |
+| `dk preview drift` | Check configuration drift between deployed and repo compose files |
 
-### How It Works
+### Deployment Flow
 
 1. Developer runs `dk preview up` from their product repo
 2. dk-cli sends request to Platform API (`POST /dk/v1/previews`) with repo, branch, and services
 3. Platform API:
-   - Clones the repo/branch on VM101 via SSH
-   - Generates docker-compose config from dk-template pattern
-   - Starts services with [Doppler](https://docs.doppler.com/) secrets injection
-   - Configures NPM proxy host for `<branch>.preview.behaviorlabs.ai`
+   - Clones the repo/branch on VM101 via SSH (using GitHub App installation token)
+   - Allocates a host port from the 10000-10999 range
+   - Starts services with [Doppler](https://docs.doppler.com/) secrets injection (`doppler run -- docker compose -f docker-compose.preview.yaml up -d`)
+   - Registers NPM proxy host for `<name>.preview.datakinetic.com` → `172.17.0.1:<port>`
    - Returns the preview URL
-4. Preview is accessible at `https://<branch>.preview.behaviorlabs.ai`
+4. Preview is accessible at `https://<name>.preview.datakinetic.com`
 5. Cleanup: `dk preview down` or automatic TTL expiry
+
+### Requirements for Product Repos
+
+Each repo must have a `docker-compose.preview.yaml` at the root with:
+- An `APP_PORT` environment variable controlling the host port mapping (e.g., `ports: ["${APP_PORT:-3000}:3000"]`)
+- `restart: unless-stopped` on all services
+- Health checks on the web service
 
 ### dk-template Integration
 
