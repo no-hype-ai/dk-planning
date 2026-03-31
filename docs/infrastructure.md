@@ -107,10 +107,62 @@ Full list of infrastructure components managed via `dk-infrastructure` Applicati
 | probe-service | probe | Synthetic monitoring (18 targets: HTTP, DNS, TCP, external) |
 | ddns-service | ddns | Route53 dynamic DNS updates |
 | platform-api | infra | dk-alchemy Platform API — unified control plane (planned, see [Platform API](platform-api.md)) |
+| penpot | penpot / penpot-staging | Open-source design tool (v2.4.2). Internal design workflow for DK team. Staging: `penpot.staging.behaviorlabs.ai`. Production: `penpot.behaviorlabs.ai`. See [Penpot](#penpot) below. |
 | staging-isolation | infra-staging | Quotas, limits, network policies |
 | storage-classes | — | Storage class definitions |
 | tempo | infra | Distributed tracing (200Gi) |
 | traefik | kube-system | In-cluster ingress (HelmChartConfig) |
+
+## Penpot
+
+[Penpot](https://penpot.app/) is an open-source design and prototyping tool deployed as an infrastructure service in dk-alchemy (not managed inside application repos).
+
+**Manifests:** `k8s/infrastructure/penpot/` in [dk-alchemy](https://github.com/data-kinetic/dk-alchemy)
+
+### Components
+
+| Deployment | Port | Role |
+|------------|------|------|
+| `penpot-backend` | 6060 | API server (Clojure). Handles auth, persistence, file management. |
+| `penpot-frontend` | 80 | Web UI (ClojureScript/React). Served via nginx. |
+| `penpot-exporter` | 6061 | PDF/SVG export service (headless Chromium). |
+
+### Configuration
+
+- **Storage:** File-system assets (`/opt/data/assets` on PVC). Backend: `assets-fs`.
+- **Database:** PostgreSQL at `postgres.infra.svc.cluster.local/penpot`
+- **Cache:** Redis at `redis.infra.svc.cluster.local:6379/0`
+- **Flags:** `enable-registration enable-login disable-demo-users enable-smtp enable-prepl-server`
+- **Telemetry:** Disabled
+- **Secrets:** Managed via Doppler operator (`DopplerSecret: penpot-doppler`)
+
+### Environments
+
+| Environment | URL | ArgoCD App | Namespace |
+|-------------|-----|------------|-----------|
+| Staging | `penpot.staging.behaviorlabs.ai` | `infra-penpot-staging` | `penpot-staging` |
+| Production | `penpot.behaviorlabs.ai` | `infra-penpot` | `penpot` |
+
+### Bootstrap Requirement
+
+Before ArgoCD can sync Penpot to a new namespace, a Doppler service token must be created manually:
+
+```bash
+kubectl create secret generic doppler-token-secret \
+  --namespace penpot-staging \
+  --from-literal=serviceToken=<DOPPLER_SERVICE_TOKEN>
+```
+
+Token source: Doppler dashboard → project `dk-alchemy` → config `stg` (or `prd`) → Service Tokens.
+
+### Access
+
+Accessible to internal team only. No public exposure — Traefik ingress with TLS (wildcard cert). Registration enabled; demo users disabled.
+
+### Related
+
+- Original issue: [behavior-labs-ai#763](https://github.com/behavior-labs-ai/behavior-labs-ai/issues/763)
+- Migration directive: [mercury-tasks#228](https://github.com/no-hype-ai/mercury-tasks/issues/228)
 
 ## Gaps
 
